@@ -17,6 +17,8 @@ class BoardScanner {
 public:
     typedef std::map<BlockColor, unsigned int> ColorCounts;
     typedef std::array<ColorCounts, Board::BOARD_HEIGHT> RowColors;
+	//추가구조체
+	typedef std::array<int, Board::BOARD_WIDTH> BlockHeight;
 
     struct VerticalMatch {
         bool found;
@@ -24,6 +26,16 @@ public:
         int bottomRow;
         int topRow;
     };
+
+	//추가구조체
+	struct HorizontalMatch {
+		bool found;
+		BlockColor color;
+		int row;
+		int howmanyBlock;
+		int firstcol;
+		int lastcol;
+	};
 
     struct ChainOffsetArea {
         bool found;
@@ -42,9 +54,15 @@ public:
 
     BoardScanner(Board &);
 
+	BlockHeight countBlockHeight();
+	bool isthereHole(int row);
+
+
     RowColors countRowColors();
     ColorCounts countColorsOn(int row, int startCol, int endCol);
     VerticalMatch findVerticalMatch();
+	HorizontalMatch findHorizontalMatch();
+
     int findColorCol(BlockColor color, int row);
     int findColorOn(BlockColor color, int row, int startCol, int endCol);
 
@@ -54,7 +72,6 @@ public:
     virtual ~BoardScanner();
 private:
     Board& _board;
-
 };
 
 #endif /* BOARDSCANNER_H */
