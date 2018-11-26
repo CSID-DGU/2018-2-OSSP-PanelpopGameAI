@@ -13,9 +13,40 @@ BoardScanner::BoardScanner(Board& board) :
 _board(board) {
 }
 
-BoardScanner::RowColors BoardScanner::countRowColors() {
+BoardScanner::BlockHeight BoardScanner::countBlockHeight()
+{
+	/********
+	블럭의 높이를 array로 반환 
+	array<int, int>
+	*******/
+	BoardScanner::BlockHeight counts;
+	
+	for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
 
-    BoardScanner::RowColors counts;
+		for (int row = Board::BOARD_HEIGHT - 1; row >= 0; --row) {
+
+			Board::Tile tile = _board.getTile(row, col);
+			if (tile.type == TileType::BLOCK && tile.b._state == BlockState::NORMAL) {//blockstate 노멀?
+				
+				counts[col] = row;
+				break;
+			}
+		}
+	}
+	return counts;
+
+}
+
+
+
+BoardScanner::RowColors BoardScanner::countRowColors() {//
+
+    BoardScanner::RowColors counts;//반환형태
+
+		/*******
+	반환값 : RowColors
+	[row][색]
+	*******/
 
     for (int row = 0; row < Board::BOARD_HEIGHT; ++row) {
         for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
@@ -41,9 +72,84 @@ BoardScanner::ColorCounts BoardScanner::countColorsOn(int row, int startCol, int
     return counts;
 }
 
+BoardScanner::HorizontalMatch BoardScanner::findHorizontalMatch()
+{/***********
+	반환값 : HorizontalMatch 구조체
+	찾으면 {true, 색깔, row ,수평블럭의시작x값,수평블럭의마지막x값}
+	없으면 {false} 반환
+	********/
+	RowColors rowColors = countRowColors();
+	for (int colorInt = 0; colorInt < BlockColor::COUNT; ++colorInt) {//0~4 색깔별로 읽는다
+		BlockColor color = static_cast<BlockColor> (colorInt);
+
+		for (int row = Board::BOARD_HEIGHT - 1; row >= 0; --row) {
+			//std::cout << "Color " << color << " on row " << row << " " << rowColors[row][color] << " times\n";
+			if (rowColors[row][color] >= 3) {//3개이상일시
+				//밑이 평평한지 보고 return
+				int startcol=5, lastcol=0;
+				for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
+					Board::Tile tile = _board.getTile(row, col);
+					if (tile.type == TileType::BLOCK && tile.b._state == BlockState::NORMAL&&colorInt == tile.b._color) {
+						if (col < startcol)
+							startcol = col;
+						if (col > lastcol)
+							lastcol = col;
+						/*****
+						
+
+						
+						************/
+					}
+				}
+
+				if (row == 0)// 맨 땅바닥이면 구멍확인필요없음
+					return HorizontalMatch mathch = { true,color,row,rowColors[row][color],startcol,lastcol };
+
+				
+				if (row>0 && !isthereHole(row - 1))//row가 땅바닥이아니고 구멍이 없을때
+
+				{
+					HorizontalMatch match = { true, color, row,rowColors[row][color],startcol,lastcol };
+					return match;
+				}
+
+			}
+		}
+
+
+	}
+
+	HorizontalMatch match = {false};//못찾음
+	return match;
+}
+
+
+bool BoardScanner::isthereHole(int row)
+{
+	/******
+	빈공간이 있으면 true
+	꽉 채워져있으면 false 
+	******/
+
+	for (int startcol = 0; startcol < Board::BOARD_WIDTH; ++startcol)
+	{
+		
+		if (_board.getTile(row, startcol).type == AIR)
+			return true;
+
+	}
+	return false;
+}
+
 BoardScanner::VerticalMatch BoardScanner::findVerticalMatch() {
-    RowColors rowColors = countRowColors();
-    for (int colorInt = 0; colorInt < BlockColor::COUNT; ++colorInt) {
+	/***********
+	반환값 : VerticalMatch 구조체
+	찾으면 {true, 색깔, 수직블럭의시작y값,수직블럭의최상단y값}
+	없으면 {false} 반환
+	********/
+
+    RowColors rowColors = countRowColors();//가로로 같은색이 몇개있나 반환  counts[row][color]
+    for (int colorInt = 0; colorInt < BlockColor::COUNT; ++colorInt) {//0~4 색깔별로 읽는다
         BlockColor color = static_cast<BlockColor> (colorInt);
         int topRow = Board::BOARD_HEIGHT - 1;
         int sameColorFound = 0;
@@ -51,7 +157,8 @@ BoardScanner::VerticalMatch BoardScanner::findVerticalMatch() {
             //std::cout << "Color " << color << " on row " << row << " " << rowColors[row][color] << " times\n";
             if (rowColors[row][color] > 0) {
                 sameColorFound++;
-            } else {
+            }
+			else {
                 if (sameColorFound >= 3) {
                     //TODO: maybe find max...
                     VerticalMatch match = {true, color, row + 1, topRow};
@@ -75,6 +182,10 @@ int BoardScanner::findColorCol(BlockColor color, int row) {
 }
 
 int BoardScanner::findColorOn(BlockColor color, int row, int startCol, int endCol) {
+	/**
+	반환값 : 왼쪽부터시작해서 처음만나는 color블록.x
+	****/
+
     for (int col = startCol; col <= endCol; ++col) {
         Board::Tile tile = _board.getTile(row, col);
         if (tile.type == TileType::BLOCK && tile.b._color == color) {
@@ -84,7 +195,15 @@ int BoardScanner::findColorOn(BlockColor color, int row, int startCol, int endCo
     return -1;
 }
 
-BlockMoveAction BoardScanner::findStackFlatteningMove() {
+BlockMoveAction BoardScanner::findStackFlatteningMove() { //평평하게 만드는동작
+	/**************
+	반환값 BlockMoveAction
+	옆이 Air면 {현위치x,현위치y,AIr인 부분 x, 현위치y(=Air인부분y)}
+	
+	못찾으면 {0,0,0,0}
+	****************/
+
+
     for (int row = Board::BOARD_HEIGHT - 1; row >= 1; --row) {
         for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
             //can be moved left
@@ -93,7 +212,7 @@ BlockMoveAction BoardScanner::findStackFlatteningMove() {
                     if (_board.getTile(row, dcol).type != AIR) break;
                     if (_board.getTile(row - 1, dcol).type == AIR) {
                         BlockMoveAction action = {col, row, dcol, row};
-                        return action;
+                        return action; //(row,col) : 블럭 (row,dcol) : AiR
                     }
                 }
             }
@@ -113,7 +232,10 @@ BlockMoveAction BoardScanner::findStackFlatteningMove() {
     return action;
 }
 
-BoardScanner::ChainOffsetArea BoardScanner::findChainOffsetArea() {
+
+
+//////////////////////////////////////
+BoardScanner::ChainOffsetArea BoardScanner::findChainOffsetArea() {//안씀
     ChainOffsetArea area;
     area = {false, 0, 0, 0, 0};
 
@@ -154,7 +276,10 @@ findSize:
     return area;
 }
 
-BoardScanner::ChainMatch BoardScanner::findChainMatch() {
+
+
+
+BoardScanner::ChainMatch BoardScanner::findChainMatch() {//안씀
     ChainMatch match;
     ChainOffsetArea area = findChainOffsetArea();
     if (!area.found) {
