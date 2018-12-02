@@ -1,14 +1,16 @@
+#pragma once
 /*
  * GeneticAlgorithm.h
  *
- *  Modified on: Nov 13, 2018
- *      Author: limjuhee
+ *  Modified on: Dec 2, 2018
+ *      Author: blue
  */
 
 #ifndef AI_GENETICALGORITHM_H_
 #define AI_GENETICALGORITHM_H_
 #include "Weight.h"
 #include <vector>
+#include <string>
 
 using namespace std;
 
@@ -44,7 +46,7 @@ public:
 	// mutation
 	void mutation();
 	// convert double value weights to binary 
-	vector<int> double2bin(double real);
+	string double2bin(double real);
 	// convert binary bits to double value weights
 	double bin2double(vector<int>* ptr);
 }
