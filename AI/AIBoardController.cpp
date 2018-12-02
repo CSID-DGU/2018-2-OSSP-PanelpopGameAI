@@ -1,335 +1,362 @@
 
-/* 
- * File:   BoardScanner.cpp
- * Author: axel
- * 
- * Created on September 30, 2016, 10:22 PM
- */
+#include <stdexcept>
+#include<cmath>
 
-#include "BoardScanner.h"
-#include <iostream>
-
-BoardScanner::BoardScanner(Board& board) :
-_board(board) {
+#include "AIBoardController.h"
+#include "..\과제\AIBoardController.h"
+#include <array>
+AIBoardController::AIBoardController(Board& board) :
+BoardController(board),
+_scanner(board) {
 }
 
-BoardScanner::BlockHeight BoardScanner::countBlockHeight()
-{
-	/********
-	블럭의 높이를 array로 반환 
-	array<int, int>
-	*******/
-	BoardScanner::BlockHeight counts;
+void AIBoardController::tick() {
+    if (_board.getState() != Board::BoardState::RUNNING || _board.getTicksRun() % 5 != 0) return;
+    if (!_inputQueue.empty()) {//커서움직이는거
+        doInput(_inputQueue.front());
+        _inputQueue.pop();
+    } else if
+        (!_cursorQueue.empty()) {//안쓰임
+        CursorMoveAction move = _cursorQueue.front();
+        doCursorMove(move.x, move.y);
+        _cursorQueue.pop();
+    } else if (!_blockMoveQueue.empty()) {
+        BlockMoveAction move = _blockMoveQueue.front();
+        doBlockMove(move.x, move.y, move.dx, move.dy);
+        _blockMoveQueue.pop();
+    } else {
+        basicVerticalmatchStrat();
+    }
+}
+
+void AIBoardController::doInput(InputAction action) {
+    switch (action) {
+        case (UP):
+            _board.inputMoveCursor(Direction::UP);
+            break;
+        case (RIGHT):
+            _board.inputMoveCursor(Direction::RIGHT);
+            break;
+        case (DOWN):
+            _board.inputMoveCursor(Direction::DOWN);
+            break;
+        case (LEFT):
+            _board.inputMoveCursor(Direction::LEFT);
+            break;
+        case (SWAP):
+            _board.inputSwapBlocks();
+            break;
+        case (RAISE):
+            _board.inputForceStackRaise();
+            break;
+
+        case (WAIT):
+            break;
+    }
+
+}
+
+void AIBoardController::doBlockMove(int x, int y, int dx, int dy) {
+
+
+
+    if (dy > y) {
+        throw std::invalid_argument("Can't move block upwards");
+    }
+    if (dx > x) { //move right
+        doCursorMove(x, y); //x,y까지 커서를 옮김
+        for (int i = 0; i < dx - x; i++) {
+            _inputQueue.push(SWAP);
+            //_inputQueue.push(WAIT);
+            //_inputQueue.push(WAIT);
+            _inputQueue.push(RIGHT);
+
+        }
+    }
+    if (dx < x) { //move left
+        doCursorMove(x - 1, y);
+        for (int i = 0; i < x - dx; i++) {
+            _inputQueue.push(SWAP);
+            //_inputQueue.push(WAIT);
+            //_inputQueue.push(WAIT);
+            _inputQueue.push(LEFT);
+        }
+    }
+}
+
+void AIBoardController::doCursorMove(int x, int y) { //목표지점 (x,y)까지 커서를 옮기는 함수
+    int curX = _board.getCursorX();//현재커서위치 x
+    int curY = _board.getCursorY();//현재커서위치 y
+
+    if (x > curX) {
+        for (int i = 0; i < x - curX; i++) {
+            _inputQueue.push(RIGHT);
+        }
+    }
+    if (x < curX) {
+        for (int i = 0; i < curX - x; i++) {
+            _inputQueue.push(LEFT);
+        }
+    }
+    if (y > curY) {
+        for (int i = 0; i < y - curY; i++) {
+            _inputQueue.push(UP);
+        }
+    }
+    if (y < curY) {
+        for (int i = 0; i < curY - y; i++) {
+            _inputQueue.push(DOWN);
+        }
+    }
+
+}
+
+void AIBoardController::basicVerticalmatchStrat() { //수정
+
 	
-	for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
-
-		for (int row = Board::BOARD_HEIGHT - 1; row >= 0; --row) {
-
-			Board::Tile tile = _board.getTile(row, col);
-			if (tile.type == TileType::BLOCK && tile.b._state == BlockState::NORMAL) {//blockstate 노멀?
-				
-				counts[col] = row;
-				break;
-			}
-		}
-	}
-	return counts;
-
-}
 
 
+	double horizonfitness;
+	double verticalfitness;
 
-BoardScanner::RowColors BoardScanner::countRowColors() {//
+	int numOfBlock = 0;
+	BoardScanner::BlockHeight blockheight=_scanner.countBlockHeight();
+	double heightfitness = getFitness_Height(blockheight);//높이평균fitness-flatteness
 
-    BoardScanner::RowColors counts;//반환형태
+	
 
-		/*******
-	반환값 : RowColors
-	[row][색]
-	*******/
-
-    for (int row = 0; row < Board::BOARD_HEIGHT; ++row) {
-        for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
-            Board::Tile tile = _board.getTile(row, col);
-            if (tile.type == TileType::BLOCK && tile.b._state == BlockState::NORMAL) {
-                BlockColor color = tile.b._color;
-                counts[row][color] = counts[row][color] + 1;
-            }
-        }
-    }
-    return counts;
-}
-
-BoardScanner::ColorCounts BoardScanner::countColorsOn(int row, int startCol, int endCol) {
-    BoardScanner::ColorCounts counts;
-    for (int col = startCol; col <= endCol; ++col) {
-        Board::Tile tile = _board.getTile(row, col);
-        if (tile.type == TileType::BLOCK && tile.b._state == BlockState::NORMAL) {
-            BlockColor color = tile.b._color;
-            counts[color] = counts[color] + 1;
-        }
-    }
-    return counts;
-}
-
-BoardScanner::HorizontalMatch BoardScanner::findHorizontalMatch()
-{/***********
-	반환값 : HorizontalMatch 구조체
-	찾으면 {true, 색깔, row ,수평블럭의시작x값,수평블럭의마지막x값}
-	없으면 {false} 반환
-	********/
-	RowColors rowColors = countRowColors();
-	for (int colorInt = 0; colorInt < BlockColor::COUNT; ++colorInt) {//0~4 색깔별로 읽는다
-		BlockColor color = static_cast<BlockColor> (colorInt);
-
-		for (int row = Board::BOARD_HEIGHT - 1; row >= 0; --row) {
-			//std::cout << "Color " << color << " on row " << row << " " << rowColors[row][color] << " times\n";
-			if (rowColors[row][color] >= 3) {//3개이상일시
-				//밑이 평평한지 보고 return
-				int startcol=5, lastcol=0;
-				for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
-					Board::Tile tile = _board.getTile(row, col);
-					if (tile.type == TileType::BLOCK && tile.b._state == BlockState::NORMAL&&colorInt == tile.b._color) {
-						if (col < startcol)
-							startcol = col;
-						if (col > lastcol)
-							lastcol = col;
-						/*****
-						
-
-						
-						************/
-					}
-				}
-
-				if (row == 0)// 맨 땅바닥이면 구멍확인필요없음
-					return HorizontalMatch mathch = { true,color,row,rowColors[row][color],startcol,lastcol };
-
-				
-				if (row>0 && !isthereHole(row - 1))//row가 땅바닥이아니고 구멍이 없을때
-
-				{
-					HorizontalMatch match = { true, color, row,rowColors[row][color],startcol,lastcol };
-					return match;
-				}
-
-			}
-		}
+	for (int i = 0; i < Board::BOARD_WIDTH; i++)
+		numOfBlock += blockheight[i];
+		
+	double numofBlockfitness=getFitness_numOfBlock(numOfBlock);
 
 
+	BoardScanner::HorizontalMatch horizMatch=_scanner.findHorizontalMatch();
+	if(horizMatch.found)
+		horizonfitness = getFitness_HorizonalBlock(horizMatch);//수평블록fitness
+	else 
+		horizonfitness = 0;
+
+
+
+    BoardScanner::VerticalMatch vertMatch = _scanner.findVerticalMatch(); //수직찾는거
+	
+	if (vertMatch.found)
+		verticalfitness = getFitness_Vertical(vertMatch);//수평블록fitness
+	else
+		verticalfitness = 0;
+	
+
+	fitnessarr fitarr = { verticalfitness ,horizonfitness, heightfitness ,numofBlockfitness };
+
+
+	int temp=findmaxnum(fitarr);
+	switch (temp) {
+	
+	case 0: //verticalfitness
+
+		doVerticalMatch(vertMatch);
+		break;
+	
+	case 1://horizonfitness
+		doHorizonalBlockMatch(horizMatch);
+		break;
+
+	case 2:// heightfitness
+		BlockMoveAction flatteningMove = _scanner.findStackFlatteningMove();
+		_blockMoveQueue.push(flatteningMove);
+		break;
+
+	case 3://umofBlockfitness
+		_inputQueue.push(RAISE);
+		break;	
+	
 	}
 
-	HorizontalMatch match = {false};//못찾음
-	return match;
+
+
+
+	/****
+
+	if (heightfitness >= horizonfitness) { // 3개중에 큰값
+	
+		if (heightfitness >= verticalfitness) {
+			lockMoveAction flatteningMove = _scanner.findStackFlatteningMove();
+			_blockMoveQueue.push(flatteningMove);
+		
+		}// heightfitness 가 클때
+		else//verticalfitness가 클때
+		{
+			doVerticalMatch(vertMatch);
+		}
+	
+	}
+	else {
+	
+		if (horizonfitness >= verticalfitness) {
+		
+			doHorizonalBlockMatch(horizMatch);
+		
+		}//horizonfitness가 클때
+		else//verticalfitness가 클때 
+		{
+			doVerticalMatch(vertMatch);
+		}
+	
+	}
+	***/
+	
+	/*
+	
+	BlockMoveAction flatteningMove = _scanner.findStackFlatteningMove();
+    if (_board.isPanic() && flatteningMove.y != 0) //평평하게해야할부분이있으면 
+	{
+        _blockMoveQueue.push(flatteningMove);
+        return;
+    }
+
+    if (!vertMatch.found) {//수직을 못찾으면
+        _inputQueue.push(RAISE); //올리는거
+        return;
+    }
+    doVerticalMatch(vertMatch);
+	*/
+}
+int AIBoardController::findmaxnum(AIBoardController::fitnessarr arr ) {
+	int max = 0;
+	int maxnum = 0;
+	for (int i = 0; i < arr.max_size(); i++)
+	{
+		if (arr[i] > max)
+		{
+			max = arr[i];
+			maxnum = i;
+		}
+	}
+	
+	return i;
+
 }
 
 
-bool BoardScanner::isthereHole(int row)
+void AIBoardController::doVerticalMatch(BoardScanner::VerticalMatch match) {
+	/**********
+	수직찾으면 알아서 큐로 동작
+	
+	************/
+	
+
+    int firstCol = _scanner.findColorCol(match.color, match.topRow);//왼쪽부터시작해서 처음만나는 color블록.x
+    int firstRow = match.topRow - 1;
+    int alt = 0;
+    for (int i = 0; i <= firstRow - match.bottomRow; ++i) {
+        int altRow = (i % 2 == 0 ? firstRow - alt : match.bottomRow + alt++);
+        int col = _scanner.findColorCol(match.color, altRow);
+        BlockMoveAction action = {col, altRow, firstCol, altRow};
+        _blockMoveQueue.push(action);
+    }
+}
+
+void AIBoardController::doChainMatch(BoardScanner::ChainMatch match) { //안씀
+    //doesn't quite work yet, blocks cannot be moved over incomplete rows (duh)
+    //also it tries to accomplish too mush in too little time (maybe just look for specific cases then)
+
+    //upper (offset)
+    int col = _scanner.findColorCol(match.color, match.offsetRow);
+    BlockMoveAction action = {col, match.offsetRow, match.col + (match.side == Direction::LEFT ? 1 : -1), match.offsetRow};
+    _blockMoveQueue.push(action);
+    //lower
+    if (match.side == Direction::LEFT) {
+        col = _scanner.findColorOn(match.color, match.row, 0, match.col);
+    } else {
+        col = _scanner.findColorOn(match.color, match.row, match.col, Board::BOARD_WIDTH - 1);
+    }
+    action = {col, match.row, match.col, match.row};
+    _blockMoveQueue.push(action);
+
+}
+
+void AIBoardController::doHorizonalBlockMatch(BoardScanner::HorizontalMatch match)
+{// 3개밖에 못맞춤
+
+	int firstcol = match.firstcol;
+	int lastcol = match.lastcol;
+	int secondcol = _scanner.findSecondColorCol(match.color, match.topRow);
+	int matchrow = match.row;
+
+
+	BlockMoveAction action = { firstcol,matchrow , secondcol, matchrow };
+	_blockMoveQueue.push(action);
+	
+	action = { lastcol,matchrow , secondcol, matchrow };
+	_blockMoveQueue.push(action);
+
+}
+
+AIBoardController::~AIBoardController() {
+}
+
+double AIBoardController::getFitness_Height(BoardScanner::BlockHeight blockheight)
 {
 	/******
-	빈공간이 있으면 true
-	꽉 채워져있으면 false 
+	fitness=높이의 표준편차 * 가중치
 	******/
 
-	for (int startcol = 0; startcol < Board::BOARD_WIDTH; ++startcol)
-	{
+	double fitness;
+	double sum = 0;
+	double AVG;//평균
+	double STD;//표준편차
+	double variance;//분산
+
+	for (int i = 0; i < blockheight.size(); i++) {
 		
-		if (_board.getTile(row, startcol).type == AIR)
-			return true;
+		sum += blockheight[i];
+	
+	}
+	AVG = sum / 5;                            // 평균계산
+	
+
+	sum = 0;
+
+	for (int i = 0; i < blockheight.size(); i++)
+	{
+		sum += pow(blockheight[i] - AVG, 2);                  // pow 함수를이용해서제곱계산
 
 	}
-	return false;
+	variance = sum / 5;                                //  분산계산
+	STD = sqrt(variance);
+	fitness=STD*isExHighWeight; //표준편차에 가중치곱해서 fitness 계산
+
+	return fitness;
 }
 
-BoardScanner::VerticalMatch BoardScanner::findVerticalMatch() {
-	/***********
-	반환값 : VerticalMatch 구조체
-	찾으면 {true, 색깔, 수직블럭의시작y값,수직블럭의최상단y값}
-	없으면 {false} 반환
+double AIBoardController::getFitness_HorizonalBlock(BoardScanner::HorizontalMatch horizmatch)
+{/********
+
+fitness=수평블록갯수 *  가중치
+ ************/
+	double fitness = (double)horizmatch.howmanyBlock*horizontalBlockWeight;
+
+	return fitness;
+}
+
+double AIBoardController::getFitness_Vertical(BoardScanner::VerticalMatch verticalmatch)
+{
+
+	/*******
+	fitness = 수직불록갯수 * 가중치
 	********/
 
-    RowColors rowColors = countRowColors();//가로로 같은색이 몇개있나 반환  counts[row][color]
-    for (int colorInt = 0; colorInt < BlockColor::COUNT; ++colorInt) {//0~4 색깔별로 읽는다
-        BlockColor color = static_cast<BlockColor> (colorInt);
-        int topRow = Board::BOARD_HEIGHT - 1;
-        int sameColorFound = 0;
-        for (int row = Board::BOARD_HEIGHT - 1; row >= 0; --row) {
-            //std::cout << "Color " << color << " on row " << row << " " << rowColors[row][color] << " times\n";
-            if (rowColors[row][color] > 0) {
-                sameColorFound++;
-            }
-			else {
-                if (sameColorFound >= 3) {
-                    //TODO: maybe find max...
-                    VerticalMatch match = {true, color, row + 1, topRow};
-                    return match;
-                }
-                topRow = row - 1;
-                sameColorFound = 0;
-            }
-        }
-        if (sameColorFound >= 3) {
-            VerticalMatch match = {true, color, 0, topRow};
-            return match;
-        }
-    }
-    VerticalMatch match = {false};
-    return match;
+	double fitness = (double)(verticalmatch.topRow - verticalmatch.bottomRow + 1)*verticalBlockWeight;
+
+	return fitness;
 }
 
-int BoardScanner::findColorCol(BlockColor color, int row) {
-    return findColorOn(color, row, 0, Board::BOARD_WIDTH - 1);
+double AIBoardController::getFitness_numOfBlock(int num)
+{
+
+	double fitness = num * numblockWeight;
+	return fitness;
 }
-
-int BoardScanner::findColorOn(BlockColor color, int row, int startCol, int endCol) {
-	/**
-	반환값 : 왼쪽부터시작해서 처음만나는 color블록.x
-	****/
-
-    for (int col = startCol; col <= endCol; ++col) {
-        Board::Tile tile = _board.getTile(row, col);
-        if (tile.type == TileType::BLOCK && tile.b._color == color) {
-            return col;
-        }
-    }
-    return -1;
-}
-
-BlockMoveAction BoardScanner::findStackFlatteningMove() { //평평하게 만드는동작
-	/**************
-	반환값 BlockMoveAction
-	옆이 Air면 {현위치x,현위치y,AIr인 부분 x, 현위치y(=Air인부분y)}
-	
-	못찾으면 {0,0,0,0}
-	****************/
-
-
-    for (int row = Board::BOARD_HEIGHT - 1; row >= 1; --row) {
-        for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
-            //can be moved left
-            if (col > 0 && _board.getTile(row, col).type == BLOCK) {
-                for (int dcol = col - 1; dcol >= 0; --dcol) {
-                    if (_board.getTile(row, dcol).type != AIR) break;
-                    if (_board.getTile(row - 1, dcol).type == AIR) {
-                        BlockMoveAction action = {col, row, dcol, row};
-                        return action; //(row,col) : 블럭 (row,dcol) : AiR
-                    }
-                }
-            }
-            //can be moved right
-            if (col < Board::BOARD_WIDTH - 1 && _board.getTile(row, col).type == BLOCK) {
-                for (int dcol = col + 1; dcol < Board::BOARD_WIDTH; ++dcol) {
-                    if (_board.getTile(row, dcol).type != AIR) break;
-                    if (_board.getTile(row - 1, dcol).type == AIR) {
-                        BlockMoveAction action = {col, row, dcol, row};
-                        return action;
-                    }
-                }
-            }
-        }
-    }
-    BlockMoveAction action = {0, 0, 0, 0};
-    return action;
-}
-
-
-
-//////////////////////////////////////
-BoardScanner::ChainOffsetArea BoardScanner::findChainOffsetArea() {//안씀
-    ChainOffsetArea area;
-    area = {false, 0, 0, 0, 0};
-
-    for (int row = 0; row < Board::BOARD_HEIGHT; ++row) {
-        for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
-            Board::Tile tile = _board.getTile(row, col);
-            if (tile.type == TileType::BLOCK
-                    && tile.b._state == BlockState::EXPLODING) {
-                area.found = true;
-                area.col = col;
-                area.row = row;
-                goto findSize;
-            }
-        }
-    }
-    if (!area.found) {
-        return area;
-    }
-findSize:
-    for (int row = area.row; row < Board::BOARD_HEIGHT; ++row) {
-        Board::Tile tile = _board.getTile(row, area.col);
-        if (tile.type == TileType::BLOCK
-                && tile.b._state == BlockState::EXPLODING) {
-            ++area.offset;
-        } else {
-            break;
-        }
-    }
-    for (int col = 0; area.col < Board::BOARD_WIDTH; ++col) {
-        Board::Tile tile = _board.getTile(area.row, col);
-        if (tile.type == TileType::BLOCK
-                && tile.b._state == BlockState::EXPLODING) {
-            ++area.width;
-        } else {
-            break;
-        }
-    }
-    return area;
-}
-
-
-
-
-BoardScanner::ChainMatch BoardScanner::findChainMatch() {//안씀
-    ChainMatch match;
-    ChainOffsetArea area = findChainOffsetArea();
-    if (!area.found) {
-        match.found = false;
-        return match;
-    }
-
-    int row = 0;
-    BoardScanner::ColorCounts lowerCount;
-    BoardScanner::ColorCounts offsetCount = countColorsOn(row + area.offset, 0, Board::BOARD_WIDTH - 1);
-    ;
-
-    auto countColors = [&](int matchCol, Direction side) {
-        for (int colorInt = 0; colorInt < BlockColor::COUNT; ++colorInt) {
-            BlockColor color = static_cast<BlockColor> (colorInt);
-            if ((area.width == 1 && lowerCount[color] >= 2 && offsetCount[color] > 0)
-                    || (area.width > 1 && lowerCount[color] > 0 && offsetCount[color] >= 2)) {
-                match.found = true;
-                match.color = color;
-                match.side = side;
-                match.col = matchCol;
-                match.row = row;
-                match.offsetRow = row + area.offset;
-                return match;
-            }
-        }
-
-        match.found = false;
-        return match;
-    };
-
-    if (area.col > 0) {
-        for (row = area.row; row + area.offset < Board::BOARD_HEIGHT; ++row) {
-            lowerCount = countColorsOn(row, 0, area.col - 1);
-            return countColors(area.col - 1, LEFT);
-        }
-    }
-    if (area.col + area.width - 1 < Board::BOARD_WIDTH) {
-        for (row = area.row; row + area.offset < Board::BOARD_HEIGHT; ++row) {
-            lowerCount = countColorsOn(row, area.col + area.width - 1, Board::BOARD_WIDTH - 1);
-            return countColors(area.col + area.width - 1, RIGHT);
-        }
-    }
-
-    match.found = false;
-    return match;
-}
-
-BoardScanner::~BoardScanner() {
-}
-
 
 
