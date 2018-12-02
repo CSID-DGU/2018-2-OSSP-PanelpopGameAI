@@ -2,7 +2,7 @@
 /*
  * GeneticAlgorithm.h
  *
- *  Modified on: Dec 2, 2018
+ *  Created on: Nov 13, 2018
  *      Author: blue
  */
 
@@ -32,7 +32,7 @@ public:
 	// Constructor : Generating parent
 	GeneticAlgorithm();
 	// crossover children considering mutation
-	void crossOver();
+	void crossOver(string* chromo1, string * chromo2);
 	// Destructors
 	~GeneticAlgorithm();
 	// generate random number between upperLimit and lowLimit
@@ -44,10 +44,10 @@ public:
 	// using roulette wheel selection
 	int selection(int totalFitness, Weight* ptr);
 	// mutation
-	void mutation();
+	void mutation(string * chromo);
 	// convert double value weights to binary 
 	string double2bin(double real);
 	// convert binary bits to double value weights
-	double bin2double(vector<int>* ptr);
+	double bin2double(string * ptr);
 }
 #endif /* AI_GENETICALGORITHM_H _ */
