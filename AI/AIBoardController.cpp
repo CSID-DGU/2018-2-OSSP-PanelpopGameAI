@@ -360,3 +360,4 @@ double AIBoardController::getFitness_numOfBlock(int num)
 }
 
 
+
