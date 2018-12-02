@@ -1,8 +1,9 @@
+#pragma once
 /*
  * GeneticAlgorithm.cpp
  *
- *  Modified on: Nov 19, 2018
- *      Author: limjuhee
+ *  Modified on: Dec 3, 2018
+ *      Author: blue
  */
 #include "Weight.h"
 #include <String>
@@ -46,4 +47,24 @@ int Weight::get_ID() {
 
 int Weight::get_score() {
 	return score;
+}
+
+void Weight::set_verticalBlockWeight(double _verticalBlockWeight) {
+	verticalBlockWeight = _verticalBlockWeight;
+}
+
+void Weight::set_horizontalBlockWeight(double _horizontalBlockWeight) {
+	horizontalBlockWeight = _horizontalBlockWeight;
+}
+
+void Weight::set_isMeetGarbageWeight(double _isMeetGarbageWeight) {
+	isMeetGarbageWeight = _isMeetGarbageWeight;
+}
+
+void Weight::set_isExHighWeight(double _isExHighWeight) {
+	isExHighWeight = _isExHighWeight;
+}
+
+void Weight::set_isLT2(double _isLT2) {
+	isLT2 = _isLT2;
 }
