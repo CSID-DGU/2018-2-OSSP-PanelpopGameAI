@@ -5,13 +5,14 @@
 #include<queue>
 #include"../Game/BoardController.h"
 #include"MoveActions.h"
-
+#include <array>
 #include "BoardScanner.h"
-
+#include <map>
 
 class AIBoardController : public BoardController {
 
 public:
+	typedef std::array<double, 4> fitnessarr;
 
     enum InputAction {
         UP, RIGHT, DOWN, LEFT, SWAP, RAISE, WAIT
@@ -26,7 +27,7 @@ public:
     double getFitness_Height(BoardScanner::BlockHeight blockheight);
 	double getFitness_HorizonalBlock(BoardScanner::HorizontalMatch horizontalmatch);
 	double getFitness_Vertical(BoardScanner::VerticalMatch verticalmatch);
-
+	double getFitness_numOfBlock(int num);
 private:
     BoardScanner _scanner;
 
@@ -40,6 +41,9 @@ private:
 	double isExHighWeight = 0;
     int variance = 0; //분산
     int averageHeight = 0; //평균높이
+	double numblockWeight;
+
+	int findmaxnum(AIBoardController::fitnessarr arr);
 
     void doInput(InputAction);
     void doCursorMove(int x, int y);
@@ -47,6 +51,8 @@ private:
     void doVerticalMatch(BoardScanner::VerticalMatch match);
     void doChainMatch(BoardScanner::ChainMatch match);
 
+
+	void doHorizonalBlockMatch(BoardScanner::HorizontalMatch match);
 
 
     void basicVerticalmatchStrat();
