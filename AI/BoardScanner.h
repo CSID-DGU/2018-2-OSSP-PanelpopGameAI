@@ -4,6 +4,7 @@
  * Author: axel
  *
  * Created on September 30, 2016, 10:22 PM
+ * edit on Dec 1st 2018
  */
 
 #ifndef BOARDSCANNER_H
@@ -18,7 +19,7 @@ public:
     typedef std::map<BlockColor, unsigned int> ColorCounts;
     typedef std::array<ColorCounts, Board::BOARD_HEIGHT> RowColors;
 	//추가구조체
-	typedef std::array<int, Board::BOARD_WIDTH> BlockHeight;
+	typedef std::array<int, Board::BOARD_WIDTH> BlockHeight; //int 형식으로 width만큼의 어레이
 
     struct VerticalMatch {
         bool found;
@@ -65,6 +66,12 @@ public:
 
     int findColorCol(BlockColor color, int row);
     int findColorOn(BlockColor color, int row, int startCol, int endCol);
+
+	int findSecondColorCol(BlockColor color, int row);
+	int findSecondColorOn(BlockColor color, int row, int startCol, int endCol);
+
+
+
 
     BlockMoveAction findStackFlatteningMove();
     ChainOffsetArea findChainOffsetArea();
