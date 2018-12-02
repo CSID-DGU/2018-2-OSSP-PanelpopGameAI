@@ -3,7 +3,7 @@
 #include<cmath>
 
 #include "AIBoardController.h"
-#include "..\과제\AIBoardController.h"
+
 #include <array>
 AIBoardController::AIBoardController(Board& board) :
 BoardController(board),
