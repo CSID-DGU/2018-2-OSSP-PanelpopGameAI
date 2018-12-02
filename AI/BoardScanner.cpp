@@ -195,6 +195,34 @@ int BoardScanner::findColorOn(BlockColor color, int row, int startCol, int endCo
     return -1;
 }
 
+
+
+//////////////////////////////////// 추가부분
+int BoardScanner::findSecondColorCol(BlockColor color, int row) {
+	return findSecondColorOn(color, row, 0, Board::BOARD_WIDTH - 1);
+}
+
+int BoardScanner::findSecondColorOn(BlockColor color, int row, int startCol, int endCol) {
+	/**
+	반환값 : 왼쪽부터시작해서 두번째로 만나는 color블록.x
+	****/
+	int temp = 0;
+
+	for (int col = startCol; col <= endCol; ++col) {
+		Board::Tile tile = _board.getTile(row, col);
+		if (tile.type == TileType::BLOCK && tile.b._color == color&&temp==1) {
+			return col;
+		}
+		else ++temp;
+	}
+	return -1;
+}
+
+
+
+
+
+
 BlockMoveAction BoardScanner::findStackFlatteningMove() { //평평하게 만드는동작
 	/**************
 	반환값 BlockMoveAction
