@@ -27,8 +27,10 @@ GeneticAlgorithm::GeneticAlgorithm() {
 	// generate 50 initial parents by random()
 	for (int i = 0; i < 50; i++) {
 
-		Weight(random(0, 10), random(0, 10), random(0, 10), random(0, 10));
-		list.push_back(Weight);
+		Weight w = new Weight(i,random(0, 10), random(0, 10), random(0, 10), random(0, 10),random(0,10));
+		list.push_back(w);
+		// first Generation
+		Generation = 1;
 
 	}
 }
@@ -42,13 +44,15 @@ double GeneticAlgorithm::random(int upperLimit, int lowerLimit) {
 	uniform_real_distribution<double> range(lowerLimit, upperLimit);
 
 	for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
-		Weight wg(i + 1, range(sed), range(sed), range(sed), range(sed), range(sed));
+		Weight wg(i, range(sed), range(sed), range(sed), range(sed), range(sed));
 		list.push_back(wg);
 	}
 }
 
 // generate Weight text file for each generation
 void GeneticAlgorithm::writeWeightToFile() {
+
+	Generation++;
 
 	ofstream fileout("Weights[%d].txt", Generation);
 
@@ -77,41 +81,48 @@ int GeneticAlgorithm::selection(int totalFitness, Weight* ptr) {
 	// roulette wheel selection
 	for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
 
-		for (int j = 0; j < 5; j++) {
-
 			sumFitness += ptr[i].get_verticalBlockWeight();
 			sumFitness += ptr[i].get_horizontalBlockWeight();
 			sumFitness += ptr[i].get_isMeetGarbageWeight();
 			sumFitness += ptr[i].get_isExHighWeight();
 			sumFitness += ptr[i].get_isLT2();
 
-		}
-
 		// return selected child's ID
 		if (sumFitness < piece) return i;
 	}
+	
+	// if the child is not selected, then returns -1
+	return -1;
 }
 
 // choose using Roulette wheel and crossOver considering mutation 
 // how to crossover 
-void GeneticAlgorithm::crossOver(string* chromo1, string * chromo2) {
+// get parameters as a pointer of weight string array
+void GeneticAlgorithm::crossOver(string * chromo1, string * chromo2) {
 
 	int place = 0;
-	string g1 = "";
-	string g2 = "";
 
 	// crossover randomly
 	// 0 < RANDOM < 1
-	if (RANDOM < CROSSOVER_RATE) {
+	for (int i = 0; i < 5; i++) {
 
-		place = (int)(RANDOM * CHROMOSOME_LENGTH);
-		g1 = chromo1->substr(0, place) + chromo2->substr(place);
-		g2 = chromo2->substr(0, place) + chromo1->substr(place);
+		string g1 = "";
+		string g2 = "";
+
+		if (RANDOM < CROSSOVER_RATE) {
+
+			place = (int)(RANDOM * CHROMOSOME_LENGTH);
+			// crossover
+			g1 = chromo1[i]->substr(0, place) + chromo2[i]->substr(place);
+			g2 = chromo2[i]->substr(0, place) + chromo1[i]->substr(place);
+
+			chromo1[i] = g1;
+			chromo2[i] = g2;
+		
+		}
 
 	}
 
-	g1 = chromo1;
-	g2 = chromo2;
 }
 
 // mutate children 
@@ -231,7 +242,7 @@ double GeneticAlgorithm::bin2double(string * ptr) {
 	for (int i = size; size >= 0; i--) {
 
 		if (ptr->at(size - 1)) {
-
+			
 		}
 	}
 
@@ -240,12 +251,94 @@ double GeneticAlgorithm::bin2double(string * ptr) {
 
 // running GeneticAlgorithm
 void GeneticAlgorithm::runGA() {
-	
+
+	// totalFitness
+	int totalfitness = 0;
+	int IDs[50];
+	int c1 = 0;
+	int c2 = 0;
+	double num = 0;
+	int cnt = 0;
+
+	// performing selection 	
+	// totalFitness problem
 	for (int i = 0; i < 50; i++) {
-		list.at[i];
+			IDs[i] = selection(totalfitness, list.at(i));
 	}
 
-}
+		for (int i = 0; i < 50; i++) {
 
+			// if the child is selected
+			if (IDs[i] >= 0) {
+				c1 = i;
+			}
+
+			// crossover two chromosomes
+			if (c1 >= 0 && c2 >= 0) {
+
+				string[5] temp1;
+				string[5] temp2;
+				// convert weight from double to string
+				temp1[0] = double2bin(list.at(c1).get_verticalBlockWeight());
+				temp1[1] = double2bin(list.at(c1).get_horizontalBlockWeight());
+				temp1[2] = double2bin(list.at(c1).get_isMeetGarbageWeight());
+				temp1[3] = double2bin(list.at(c1).get_isExHighWeight());
+				temp1[4] = double2bin(list.at(c1).get_isLT2());
+
+				temp2[0] = double2bin(list.at(c2).get_verticalBlockWeight());
+				temp2[1] = double2bin(list.at(c2).get_horizontalBlockWeight());
+				temp2[2] = double2bin(list.at(c2).get_isMeetGarbageWeight());
+				temp2[3] = double2bin(list.at(c2).get_isExHighWeight());
+				temp2[4] = double2bin(list.at(c2).get_isLT2());
+
+				// give parameters as a selected chromosome's string weight array
+				crossOver(temp1, temp2);
+
+				// generate new generation with new weights
+				// write to file and store to new Weight class
+				// update New generation to vector<Weight> list
+				// what about poolsize?
+				// size doesn't match
+				num = bin2double(temp1[0]);
+				list.at(c1).set_verticalBlockWeight(num);
+
+				num = bin2double(temp1[1]);
+				list.at(c1).set_horizontalBlockWeight(num);
+
+				num = bin2double(temp1[2]);
+				list.at(c1).set_isMeetGarbageWeight(num);
+
+				num = bin2double(temp1[3]);
+				list.at(c1).set_isExHighWeight(num);
+
+				num = bin2double(temp1[4]);
+				list.at(c1).set_isLT2(num);
+
+				cnt++;
+
+				num = bin2double(temp2[0]);
+				list.at(c2).set_verticalBlockWeight(num);
+
+				num = bin2double(temp2[1]);
+				list.at(c2).set_horizontalBlockWeight(num);
+
+				num = bin2double(temp2[2]);
+				list.at(c2).set_isMeetGarbageWeight(num);
+
+				num = bin2double(temp2[3]);
+				list.at(c2).set_isExHighWeight(num);
+
+				num = bin2double(temp2[4]);
+				list.at(c2).set_isLT2(num);
+
+				cnt++;
+
+				if(cnt==49) 
+			}
+		}
+}
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																															
 // Destructor
 GeneticAlgorithm::~GeneticAlgorithm() {  }
+
+// how to generate 50 children from selected parents
