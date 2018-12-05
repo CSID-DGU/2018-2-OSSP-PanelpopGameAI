@@ -66,35 +66,28 @@ void GeneticAlgorithm::writeWeightToFile() {
 				list.at(i).get_isExHighWeight() << "   " <<
 				list.at(i).get_isLT2() << endl;
 		}
-
 	}
 }
 
-// totalFitness : sum of every children in the Generation 
-/* 
- * choose randomly considering probability 
- */
-int GeneticAlgorithm::selection(int totalFitness, vector<Weight> list) {
+// most high-scored child gonna get higher Fitness
+int GeneticAlgorithm::selection(int index, vector<Weight> list) {
 
-	// sum of fitnesses to current fitness 
-	double sumFitness = 0;
+	int score = 0;
+	int maxScore = 0;
 
-	// generate random point which decides choice
-	// 0 < RANDOM < 1
-	// need scale(range) manupulating
-	double piece = (double)(totalFitness * RANDOM);
+	// from Board.h, final score
+	// getBoard(0) -> AI's board in VS AI mode
+	// which mode to play AI?
+	//score = _game.getBoard(0).getScore();
+
+	// piece < score 
+	double piece = (double)(maxScore * RANDOM);
 
 	// roulette wheel selection
-	for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
+	for (int i = index; i < MAX_GENERATION_SIZE; i++) {
 
-		sumFitness += list.at(i).get_verticalBlockWeight();
-		sumFitness += list.at(i).get_horizontalBlockWeight();
-		sumFitness += list.at(i).get_isMeetGarbageWeight();
-		sumFitness += list.at(i).get_isExHighWeight();
-		sumFitness += list.at(i).get_isLT2();
-
-		// return selected child's ID
-		if (sumFitness < piece) return i;
+		// return selected child's IDs
+		if (score < piece) return i;
 	}
 
 	// if the child is not selected, then returns -1
@@ -110,7 +103,6 @@ void GeneticAlgorithm::crossOver(string * chromo1, string * chromo2) {
 	// crossover randomly
 	// 0 < RANDOM < 1
 	for (int i = 0; i < 5; i++) {
-
 		string g1 = "";
 		string g2 = "";
 
@@ -123,11 +115,8 @@ void GeneticAlgorithm::crossOver(string * chromo1, string * chromo2) {
 
 			chromo1[i] = g1;
 			chromo2[i] = g2;
-
 		}
-
 	}
-
 }
 
 // mutate children 
@@ -265,94 +254,103 @@ void GeneticAlgorithm::runGA() {
 
 	// totalFitness
 	int totalfitness = 0;
-	int IDs[50];
 	int c1 = 0;
 	int c2 = 0;
 	double num = 0;
 	int cnt = 0;
+	int index = 0;
+	int temp = 0;
+	int new_id = 0;
 
-	// performing selection 	
-	// totalFitness problem
-	for (int i = 0; i < 50; i++) {
-		//IDs[i] = selection(totalfitness, &(list.at(i)));
-	}
-	
-	for (int i = 0; i < 50; i++) {
+	// while 
+	// 2 chromos -> 2 children => repeat 25times = MAX_GENERATION = 50
+	while (new_id < MAX_GENERATION_SIZE) {
 
-		// if the child is selected
-		if (IDs[i] >= 0) {
-			c1 = i;
+		// performing selection 
+
+		// select first candidate
+		while (1) {
+			temp = selection(index, list);
+			index++;
+			if (temp >= 0) break;
+			else if (index == 49) index = 0;
 		}
+		c1 = temp;
+
+		// select second candidate
+		while (1) {
+			temp = selection(index, list);
+			index++;
+			if (temp >= 0) break;
+			else if (index == 49) index = 0;
+		}
+		c2 = temp;
 
 		// crossover two chromosomes
-		if (c1 >= 0 && c2 >= 0) {
 
-			string temp1[5];
-			string temp2[5];
-			// convert weight from double to string
-			temp1[0] = double2bin(list.at(c1).get_verticalBlockWeight());
-			temp1[1] = double2bin(list.at(c1).get_horizontalBlockWeight());
-			temp1[2] = double2bin(list.at(c1).get_isMeetGarbageWeight());
-			temp1[3] = double2bin(list.at(c1).get_isExHighWeight());
-			temp1[4] = double2bin(list.at(c1).get_isLT2());
+		string temp1[5];
+		string temp2[5];
+		// convert weight from double to string
+		temp1[0] = double2bin(list.at(c1).get_verticalBlockWeight());
+		temp1[1] = double2bin(list.at(c1).get_horizontalBlockWeight());
+		temp1[2] = double2bin(list.at(c1).get_isMeetGarbageWeight());
+		temp1[3] = double2bin(list.at(c1).get_isExHighWeight());
+		temp1[4] = double2bin(list.at(c1).get_isLT2());
 
-			temp2[0] = double2bin(list.at(c2).get_verticalBlockWeight());
-			temp2[1] = double2bin(list.at(c2).get_horizontalBlockWeight());
-			temp2[2] = double2bin(list.at(c2).get_isMeetGarbageWeight());
-			temp2[3] = double2bin(list.at(c2).get_isExHighWeight());
-			temp2[4] = double2bin(list.at(c2).get_isLT2());
+		temp2[0] = double2bin(list.at(c2).get_verticalBlockWeight());
+		temp2[1] = double2bin(list.at(c2).get_horizontalBlockWeight());
+		temp2[2] = double2bin(list.at(c2).get_isMeetGarbageWeight());
+		temp2[3] = double2bin(list.at(c2).get_isExHighWeight());
+		temp2[4] = double2bin(list.at(c2).get_isLT2());
 
-			// give parameters as a selected chromosome's string weight array
-			crossOver(temp1, temp2);
+		// give parameters as a selected chromosome's string weight array
+		crossOver(temp1, temp2);
+		// consider mutation
+		mutation(temp1);
+		mutation(temp2);
 
-			// generate new generation with new weights
-			// write to file and store to new Weight class
-			// update New generation to vector<Weight> list
-			// what about poolsize?
-			// size doesn't match
-			num = bin2double(temp1[0]);
-			list.at(c1).set_verticalBlockWeight(num);
+		// update New generation to vector<Weight> list
 
-			num = bin2double(temp1[1]);
-			list.at(c1).set_horizontalBlockWeight(num);
+		// new born baby 1
+		num = bin2double(temp1[0]);
+		list.at(new_id).set_verticalBlockWeight(num);
 
-			num = bin2double(temp1[2]);
-			list.at(c1).set_isMeetGarbageWeight(num);
+		num = bin2double(temp1[1]);
+		list.at(new_id).set_horizontalBlockWeight(num);
 
-			num = bin2double(temp1[3]);
-			list.at(c1).set_isExHighWeight(num);
+		num = bin2double(temp1[2]);
+		list.at(new_id).set_isMeetGarbageWeight(num);
 
-			num = bin2double(temp1[4]);
-			list.at(c1).set_isLT2(num);
+		num = bin2double(temp1[3]);
+		list.at(new_id).set_isExHighWeight(num);
 
-			cnt++;
+		num = bin2double(temp1[4]);
+		list.at(new_id).set_isLT2(num);
 
-			num = bin2double(temp2[0]);
-			list.at(c2).set_verticalBlockWeight(num);
+		new_id++;
 
-			num = bin2double(temp2[1]);
-			list.at(c2).set_horizontalBlockWeight(num);
+		// new born born baby 2
+		num = bin2double(temp2[0]);
+		list.at(new_id).set_verticalBlockWeight(num);
 
-			num = bin2double(temp2[2]);
-			list.at(c2).set_isMeetGarbageWeight(num);
+		num = bin2double(temp2[1]);
+		list.at(new_id).set_horizontalBlockWeight(num);
 
-			num = bin2double(temp2[3]);
-			list.at(c2).set_isExHighWeight(num);
+		num = bin2double(temp2[2]);
+		list.at(new_id).set_isMeetGarbageWeight(num);
 
-			num = bin2double(temp2[4]);
-			list.at(c2).set_isLT2(num);
+		num = bin2double(temp2[3]);
+		list.at(new_id).set_isExHighWeight(num);
 
-			cnt++;
+		num = bin2double(temp2[4]);
+		list.at(new_id).set_isLT2(num);
 
-			// stop generating new generation
-			// break loop 
-			if (cnt == 49) {}
-		}
+		new_id++;
 	}
+
+	// write to file and store to new Weight list
+	writeWeightToFile();
 }
 
 // Destructor
 GeneticAlgorithm::~GeneticAlgorithm() {  }
-
-// how to generate 50 children from selected parents
-// calculate binary to real value (in bin2double)
