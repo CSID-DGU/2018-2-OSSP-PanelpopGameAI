@@ -1,7 +1,7 @@
 /*
  * GeneticAlgorithm.cpp
  *
- *  Modified on: Dec 4, 2018
+ *  Modified on: Dec 5, 2018
  *      Author: blue
  */
 #include "GeneticAlgorithm.h"
@@ -14,39 +14,38 @@
 
 using namespace std;
 
-#define MUATATION_RATE 0.000
+// -RATE should be beween 0 to 1
+#define MUATATION_RATE 0.001
 // return double real number between 0 to 1
-#define RANDOM rand()/(double)(RAND_MAX+1)
-#define CROSSOVER_RATE 0.000
-#define MAX_GENERATION_SIZE 0
+#define CROSSOVER_RATE 0.7
+#define MAX_GENERATION_SIZE 50
 // real value(4) + decimal point(5)
-#define CHROMOSOME_LENGTH 9 
+#define CHROMOSOME_LENGTH 9
 
 // Constructor
 GeneticAlgorithm::GeneticAlgorithm() {
 
-	// generate 50 initial parents by random()
-	for (int i = 0; i < 50; i++) {
-
-		list.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10), random(0, 10)));
-		// first Generation
-		Generation = 1;
-
+	// generate parents only 1 times at the beginning
+	if (Generation == 0) {
+		// generate 50 initial parents by random()
+		for (int i = 0; i < 50; i++) {
+			// lowLimit = 0, upperLimit = 10
+			list.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10), random(0, 10)));
+		}
+		// write initial generation to file
+		writeWeightToFile();
 	}
 }
 
 // generate random number between upperLimit and lowLimit
-// use random() one-time when generating parents
 double GeneticAlgorithm::random(int upperLimit, int lowerLimit) {
 
 	random_device sd;
 	mt19937_64 sed(sd());
 	uniform_real_distribution<double> range(lowerLimit, upperLimit);
 
-	for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
-		Weight wg(i, range(sed), range(sed), range(sed), range(sed), range(sed));
-		list.push_back(wg);
-	}
+	return range(sed);
+
 }
 
 // generate Weight text file for each generation
@@ -60,28 +59,26 @@ void GeneticAlgorithm::writeWeightToFile() {
 	if (fileout.is_open()) {
 
 		for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
-			fileout << list.at(i).get_verticalBlockWeight() << "   " <<
+			fileout << i << "   " << list.at(i).get_verticalBlockWeight() << "   " <<
 				list.at(i).get_horizontalBlockWeight() << "   " <<
 				list.at(i).get_isMeetGarbageWeight() << "   " <<
 				list.at(i).get_isExHighWeight() << "   " <<
 				list.at(i).get_isLT2() << endl;
 		}
 	}
+
 }
 
-// most high-scored child gonna get higher Fitness
+// most high-scored child, high-chance 
 int GeneticAlgorithm::selection(int index, vector<Weight> list) {
 
 	int score = 0;
 	int maxScore = 0;
 
-	// from Board.h, final score
-	// getBoard(0) -> AI's board in VS AI mode
-	// which mode to play AI?
-	//score = _game.getBoard(0).getScore();
+	// score = _game.getBoard(0).getScore();
 
 	// piece < score 
-	double piece = (double)(maxScore * RANDOM);
+	double piece = (double)(maxScore * random(0,1));
 
 	// roulette wheel selection
 	for (int i = index; i < MAX_GENERATION_SIZE; i++) {
@@ -106,9 +103,19 @@ void GeneticAlgorithm::crossOver(string * chromo1, string * chromo2) {
 		string g1 = "";
 		string g2 = "";
 
-		if (RANDOM < CROSSOVER_RATE) {
+		int size1 = chromo1[i].size();
+		int size2 = chromo2[i].size();
 
-			place = (int)(RANDOM * CHROMOSOME_LENGTH);
+		if (random(0, 1) < CROSSOVER_RATE) {
+
+			place = (int)(random(0, 1) * CHROMOSOME_LENGTH);
+
+			// if random place > weight's size
+			if (place > size1 || place > size2) {
+				if (size1 > size2) place = size2 - 1;
+				else place = size1 - 1;
+			}
+
 			// crossover
 			g1 = chromo1[i].substr(0, place) + chromo2[i].substr(place);
 			g2 = chromo2[i].substr(0, place) + chromo1[i].substr(place);
@@ -128,9 +135,14 @@ void GeneticAlgorithm::mutation(string * chromo) {
 	// consider mutation on every 5 Weights 
 	for (int i = 0; i < 5; i++) {
 
+		int size1 = chromo[i].size();
+
 		// how to mutate
-		if (RANDOM < MUATATION_RATE) {
-			num = (int)(RANDOM * CHROMOSOME_LENGTH);
+		if (random(0, 1) < MUATATION_RATE) {
+			num = (int)(random(0, 1) * CHROMOSOME_LENGTH);
+
+			if (num > size1) num = size1-1;
+			
 			temp = chromo->at(num);
 
 			// if randomly picked string is 1 
@@ -147,18 +159,15 @@ void GeneticAlgorithm::mutation(string * chromo) {
 
 // convert real value weights to binary
 // 5 digits from rightmost are decimal point part
-// rest of digits are real value
-// considering notation of decimal point 
 // Assume (0 < weight < 10) => max_chromosome_size = 9
 string GeneticAlgorithm::double2bin(double real) {
 
 	// real value part
 	int num = (int)real;
+	// decimal point part
+	double point = real - num;
 	int size = 0;
 	int index = 0;
-
-	// decimal point part
-	int point = real - num;
 
 	// reversed real value weight bits
 	string r;
@@ -174,7 +183,7 @@ string GeneticAlgorithm::double2bin(double real) {
 		r += to_string(num % 2);
 		num /= 2;
 
-		if (num == 1) { r += to_string(num); }
+		if (num == 1) { r += to_string(1); }
 		else if (num == 0) break;
 
 	}
@@ -204,9 +213,9 @@ string GeneticAlgorithm::double2bin(double real) {
 		// reverse stored remainder 
 		binary += r.at(index);
 		index--;
+		if (index < 0) break;
 	}
-
-	// size of p -1
+	
 	index = 4;
 
 	for (int i = 0; i < 5; i++) {
@@ -232,19 +241,18 @@ double GeneticAlgorithm::bin2double(string ptr) {
 
 	// size of the weight binary
 	size = ptr.size();
+	int index = size - 1;
 
-	// calculating point decimal part
 	for (int i = 0; i < size; i++) {
 
 		// rightmost bit = 0 or 1
-		num = ptr.at(size - 1);
+		num = ptr.at(index);
 
-		if (num == 1) {
+		if (num == '1') {
 			w += pow(2, i);
 		}
 		// left <- right
-		size--;
-
+		index--;
 	}
 	return w;
 }
@@ -258,12 +266,11 @@ void GeneticAlgorithm::runGA() {
 	int c2 = 0;
 	double num = 0;
 	int cnt = 0;
+	// child's id 
 	int index = 0;
 	int temp = 0;
 	int new_id = 0;
 
-	// while 
-	// 2 chromos -> 2 children => repeat 25times = MAX_GENERATION = 50
 	while (new_id < MAX_GENERATION_SIZE) {
 
 		// performing selection 
@@ -285,6 +292,7 @@ void GeneticAlgorithm::runGA() {
 			else if (index == 49) index = 0;
 		}
 		c2 = temp;
+		index = 0;
 
 		// crossover two chromosomes
 
@@ -310,6 +318,7 @@ void GeneticAlgorithm::runGA() {
 		mutation(temp2);
 
 		// update New generation to vector<Weight> list
+		new_id++;
 
 		// new born baby 1
 		num = bin2double(temp1[0]);
@@ -329,7 +338,7 @@ void GeneticAlgorithm::runGA() {
 
 		new_id++;
 
-		// new born born baby 2
+		// new born baby 2
 		num = bin2double(temp2[0]);
 		list.at(new_id).set_verticalBlockWeight(num);
 
@@ -345,9 +354,8 @@ void GeneticAlgorithm::runGA() {
 		num = bin2double(temp2[4]);
 		list.at(new_id).set_isLT2(num);
 
-		new_id++;
 	}
-
+	
 	// write to file and store to new Weight list
 	writeWeightToFile();
 }
