@@ -10,22 +10,19 @@
 #define AI_GENETICALGORITHM_H_
 #include "Weight.h"
 // depend on which mode choose to training
-//#include "AIGameState.h"
 //#include "EndlessGameState.h"
-//#include "VSGameState.h"
 #include <vector>
 #include <string>
 #include <map>
 
 using namespace std;
+
+// global variable
 int Generation = 0;
+// list of weight
+vector <Weight> list;
 
 class GeneticAlgorithm {
-
-private:
-
-	// list of weight
-	vector <Weight> list;
 	
 public:
 
