@@ -1,7 +1,7 @@
 /*
  * GeneticAlgorithm.cpp
  *
- *  Modified on: Dec 7, 2018
+ *  Modified on: Dec 8, 2018
  *      Author: blue
  */
 #include "GeneticAlgorithm.h"
@@ -30,7 +30,7 @@ GeneticAlgorithm::GeneticAlgorithm() {
 		// generate 50 initial parents by random()
 		for (int i = 0; i < 50; i++) {
 			// lowLimit = 0, upperLimit = 10
-			list.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10)));
+			weightList.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10)));
 		}
 		// write initial generation to file
 		writeWeightToFile();
@@ -52,30 +52,31 @@ double GeneticAlgorithm::random(int upperLimit, int lowerLimit) {
 void GeneticAlgorithm::writeWeightToFile() {
 
 	Generation++;
-
-	ofstream fileout("Weights[%d].txt", Generation);
+	char fileName[30];
+	sprintf(fileName, "Weight[%d].txt", Generation);
+	ofstream fileout(fileName);
 
 	// write weights to file
 	if (fileout.is_open()) {
 
 		for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
-			fileout << i << "   " << list.at(i).get_verticalBlockWeight() << "   " <<
-				list.at(i).get_horizontalBlockWeight() << "   " <<
-				list.at(i).get_isMeetGarbageWeight() << "   " <<
-				list.at(i).get_isExHighWeight() << "   " << endl;
+			fileout << i << "   " << weightList.at(i).get_verticalBlockWeight() << "   " <<
+				weightList.at(i).get_horizontalBlockWeight() << "   " <<
+				weightList.at(i).get_isMeetGarbageWeight() << "   " <<
+				weightList.at(i).get_isExHighWeight() << "   " << endl;
 		}
 	}
 
 }
 
 // most high-scored child, high-chance 
-int GeneticAlgorithm::selection(int index, vector<Weight> list) {
+int GeneticAlgorithm::selection(int index, vector<Weight> weightList) {
 
 	int score = 0;
 	// current maxScore
-	//int maxScore = 0;
+	int maxScore = 0;
 
-	score = list.at(index).get_score();
+	score = weightList.at(index).get_score();
 
 	// piece < score 
 	double piece = (double)(maxScore * random(0,1));
@@ -274,7 +275,7 @@ void GeneticAlgorithm::runGA() {
 
 		// select first candidate
 		while (1) {
-			temp = selection(index, list);
+			temp = selection(index, weightList);
 			index++;
 			if (temp >= 0) break;
 			else if (index == 49) index = 0;
@@ -283,7 +284,7 @@ void GeneticAlgorithm::runGA() {
 
 		// select second candidate
 		while (1) {
-			temp = selection(index, list);
+			temp = selection(index, weightList);
 			index++;
 			if (temp >= 0) break;
 			else if (index == 49) index = 0;
@@ -296,15 +297,15 @@ void GeneticAlgorithm::runGA() {
 		string temp1[4];
 		string temp2[4];
 		// convert weight from double to string
-		temp1[0] = double2bin(list.at(c1).get_verticalBlockWeight());
-		temp1[1] = double2bin(list.at(c1).get_horizontalBlockWeight());
-		temp1[2] = double2bin(list.at(c1).get_isMeetGarbageWeight());
-		temp1[3] = double2bin(list.at(c1).get_isExHighWeight());
+		temp1[0] = double2bin(weightList.at(c1).get_verticalBlockWeight());
+		temp1[1] = double2bin(weightList.at(c1).get_horizontalBlockWeight());
+		temp1[2] = double2bin(weightList.at(c1).get_isMeetGarbageWeight());
+		temp1[3] = double2bin(weightList.at(c1).get_isExHighWeight());
 
-		temp2[0] = double2bin(list.at(c2).get_verticalBlockWeight());
-		temp2[1] = double2bin(list.at(c2).get_horizontalBlockWeight());
-		temp2[2] = double2bin(list.at(c2).get_isMeetGarbageWeight());
-		temp2[3] = double2bin(list.at(c2).get_isExHighWeight());
+		temp2[0] = double2bin(weightList.at(c2).get_verticalBlockWeight());
+		temp2[1] = double2bin(weightList.at(c2).get_horizontalBlockWeight());
+		temp2[2] = double2bin(weightList.at(c2).get_isMeetGarbageWeight());
+		temp2[3] = double2bin(weightList.at(c2).get_isExHighWeight());
 
 		// give parameters as a selected chromosome's string weight array
 		crossOver(temp1, temp2);
@@ -312,36 +313,36 @@ void GeneticAlgorithm::runGA() {
 		mutation(temp1);
 		mutation(temp2);
 
-		// update New generation to vector<Weight> list
+		// update New generation to vector<Weight> weightList
 		new_id++;
 
 		// new born baby 1
 		num = bin2double(temp1[0]);
-		list.at(new_id).set_verticalBlockWeight(num);
+		weightList.at(new_id).set_verticalBlockWeight(num);
 
 		num = bin2double(temp1[1]);
-		list.at(new_id).set_horizontalBlockWeight(num);
+		weightList.at(new_id).set_horizontalBlockWeight(num);
 
 		num = bin2double(temp1[2]);
-		list.at(new_id).set_isMeetGarbageWeight(num);
+		weightList.at(new_id).set_isMeetGarbageWeight(num);
 
 		num = bin2double(temp1[3]);
-		list.at(new_id).set_isExHighWeight(num);
+		weightList.at(new_id).set_isExHighWeight(num);
 
 		new_id++;
 
 		// new born baby 2
 		num = bin2double(temp2[0]);
-		list.at(new_id).set_verticalBlockWeight(num);
+		weightList.at(new_id).set_verticalBlockWeight(num);
 
 		num = bin2double(temp2[1]);
-		list.at(new_id).set_horizontalBlockWeight(num);
+		weightList.at(new_id).set_horizontalBlockWeight(num);
 
 		num = bin2double(temp2[2]);
-		list.at(new_id).set_isMeetGarbageWeight(num);
+		weightList.at(new_id).set_isMeetGarbageWeight(num);
 
 		num = bin2double(temp2[3]);
-		list.at(new_id).set_isExHighWeight(num);
+		weightList.at(new_id).set_isExHighWeight(num);
 
 	}
 	
