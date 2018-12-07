@@ -7,10 +7,12 @@
  */
 
 #include "AITrainingGameState.h"
-#include "../AI/GeneticAlgorithm.h"
 
 
 #include "../AI/AIBoardController.h"
+
+
+
 #include "../Game/BoardEventHandler.h"
 #include "../Game/GameEventHandler.h"
 #include "StateManager.h"
@@ -18,29 +20,41 @@
 #include "../Game/VsGame.h"
 #include "../Rendering/VsGameRenderer.h"
 #include "AITrainingGameState.h"
+#include "../AI/Weight.h"
+#include "EndlessGameState.h"
 
-AITrainingGameState::AITrainingGameState() {
+
+
+AITrainingGameState::AITrainingGameState() {//
 	_game = new EndlessGame(new GameEventHandler());
 	_gameRenderer = new EndlessGameRenderer((EndlessGame &)* _game);
 	_game->getBoard(0).setEventHandler(new BoardEventHandler(*_gameRenderer, 0));
 	//    _playerBoardController = new KeyboardController(_game->getBoard(0),
 	//            StateManager::getInstance().getP1keys());
+	temp = new AIBoardController(_game->getBoard(0));
+	_opponentBoardcontollers.push_back(temp);
+	
+	
+	geneticAlgorithm= new GeneticAlgorithm();
+//	temp->horizontalBlockWeight = list.at(0).get_horizontalBlockWeight;// <
+//	temp->isExHighWeight = list.at(0).get_isExHighWeight;
+//	temp->verticalBlockWeight = list.at(0).get_verticalBlockWeight;
+	temp->set_horizontalBlockWeight(list.at(count).get_horizontalBlockWeight);//
+                        temp->set_isExHighWeight(list.at(count).get_isExHighWeight);
+                        temp->set_verticalBlockWeight(list.at(count).get_verticalBlockWeight);
 
-	_opponentBoardcontollers.push_back(new AIBoardController(_game->getBoard(0)));
+
+
+	temp->ID = list.at(0).get_ID;
+
+
 }
 
 
 void AITrainingGameState::tick() {
 	InputManager& input = InputManager::getInstance();
 
-
-	GeneticAlgorithm geneticAlgorithm = new GeneticAlgorithm();
-	AIBoardController* temp = _opponentBoardcontollers.at(0);
-	temp->horizontalBlockWeight = geneticAlgorithm.list.at(0);// <- ÀÌºÎºÐ
-
-	//geneticAlgorithm.
-
-
+	
 
 	if (input.keyDown(SDL_SCANCODE_5)) {
 		_game->inputTogglePause();
@@ -62,14 +76,36 @@ void AITrainingGameState::tick() {
 	else if (_game->getState() == Game::State::ENDED) {
 		//TODO: change to any key and add timeout..?
 		if (input.keyDown(SDL_SCANCODE_5)) {
-			geneticAlgorithm.crossOver();
-
-
+		
+			
 		}
-	
+		int currentScore = _game->getBoard(0).getScore;
+		list.at(count).set_score = currentScore; //sco
+		if (maxScore <= currentScore) maxScore = currentScore;
+
+
+
+		++count;
+		
+		
+		if (count == list.size()) { //
+			geneticAlgorithm->runGA(); 
+			count = 0;
+			temp->set_horizontalBlockWeight(list.at(count).get_horizontalBlockWeight);//
+			temp->set_isExHighWeight(list.at(count).get_isExHighWeight);
+			temp->set_verticalBlockWeight(list.at(count).get_verticalBlockWeight);
+			temp->ID = list.at(count).get_ID;
+			maxScore = 0;
+		}
+		else {
+			temp->set_horizontalBlockWeight(list.at(count).get_horizontalBlockWeight);// 
+			temp->set_isExHighWeight(list.at(count).get_isExHighWeight);
+			temp->set_verticalBlockWeight(list.at(count).get_verticalBlockWeight);
+			temp->ID = list.at(count).get_ID;
+		}
+		_game->reset();
 	
 	}
 	_game->tick();
 	_gameRenderer->tick();
 }
-
