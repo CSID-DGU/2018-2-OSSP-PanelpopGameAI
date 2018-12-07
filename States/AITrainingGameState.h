@@ -1,28 +1,36 @@
 
 /* 
  * File:   AIGameState.h
- * Author: axel
+ * Author: ysy
  *
- * Created on September 26, 2016, 11:18 PM
+ * Created on 2018/12/7
  */
 
-#ifndef AIGAMESTATE_H
-#define AIGAMESTATE_H
+#ifndef AITRAININGGAMESTATE_H
+#define AITRAININGGAMESTATE_H
 
 #include "../AI/AIBoardController.h"
 #include "GameState.h"
 
+#include "../AI/GeneticAlgorithm.h"
+
+extern vector<Weight> list;
+
+int maxScore;
 
 class AITrainingGameState : public GameState{
 public:
 	AITrainingGameState();
 	void tick();
-
+	
 protected:
+	GeneticAlgorithm* geneticAlgorithm;
 	std::vector<AIBoardController*> _opponentBoardcontollers;
+	AIBoardController* temp;
+	int count = 0;
+	
 private:
 
 };
 
-#endif /* AIGAMESTATE_H */
-
+#endif /* AITRAININGGAMESTATE_H */
