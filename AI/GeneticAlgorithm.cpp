@@ -1,7 +1,7 @@
 /*
  * GeneticAlgorithm.cpp
  *
- *  Modified on: Dec 5, 2018
+ *  Modified on: Dec 7, 2018
  *      Author: blue
  */
 #include "GeneticAlgorithm.h"
@@ -30,7 +30,7 @@ GeneticAlgorithm::GeneticAlgorithm() {
 		// generate 50 initial parents by random()
 		for (int i = 0; i < 50; i++) {
 			// lowLimit = 0, upperLimit = 10
-			list.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10), random(0, 10)));
+			list.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10)));
 		}
 		// write initial generation to file
 		writeWeightToFile();
@@ -62,8 +62,7 @@ void GeneticAlgorithm::writeWeightToFile() {
 			fileout << i << "   " << list.at(i).get_verticalBlockWeight() << "   " <<
 				list.at(i).get_horizontalBlockWeight() << "   " <<
 				list.at(i).get_isMeetGarbageWeight() << "   " <<
-				list.at(i).get_isExHighWeight() << "   " <<
-				list.at(i).get_isLT2() << endl;
+				list.at(i).get_isExHighWeight() << "   " << endl;
 		}
 	}
 
@@ -73,9 +72,10 @@ void GeneticAlgorithm::writeWeightToFile() {
 int GeneticAlgorithm::selection(int index, vector<Weight> list) {
 
 	int score = 0;
-	int maxScore = 0;
+	// current maxScore
+	//int maxScore = 0;
 
-	// score = _game.getBoard(0).getScore();
+	score = list.at(index).get_score();
 
 	// piece < score 
 	double piece = (double)(maxScore * random(0,1));
@@ -84,9 +84,8 @@ int GeneticAlgorithm::selection(int index, vector<Weight> list) {
 	for (int i = index; i < MAX_GENERATION_SIZE; i++) {
 
 		// return selected child's IDs
-		if (score < piece) return i;
+		if (score > piece) return i;
 	}
-
 	// if the child is not selected, then returns -1
 	return -1;
 }
@@ -99,7 +98,7 @@ void GeneticAlgorithm::crossOver(string * chromo1, string * chromo2) {
 
 	// crossover randomly
 	// 0 < RANDOM < 1
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 4; i++) {
 		string g1 = "";
 		string g2 = "";
 
@@ -133,7 +132,7 @@ void GeneticAlgorithm::mutation(string * chromo) {
 	string temp = "";
 
 	// consider mutation on every 5 Weights 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 4; i++) {
 
 		int size1 = chromo[i].size();
 
@@ -260,13 +259,11 @@ double GeneticAlgorithm::bin2double(string ptr) {
 // running GeneticAlgorithm
 void GeneticAlgorithm::runGA() {
 
-	// totalFitness
-	int totalfitness = 0;
+	// candidate child's ID
 	int c1 = 0;
 	int c2 = 0;
 	double num = 0;
-	int cnt = 0;
-	// child's id 
+	// child's ID for loop
 	int index = 0;
 	int temp = 0;
 	int new_id = 0;
@@ -296,20 +293,18 @@ void GeneticAlgorithm::runGA() {
 
 		// crossover two chromosomes
 
-		string temp1[5];
-		string temp2[5];
+		string temp1[4];
+		string temp2[4];
 		// convert weight from double to string
 		temp1[0] = double2bin(list.at(c1).get_verticalBlockWeight());
 		temp1[1] = double2bin(list.at(c1).get_horizontalBlockWeight());
 		temp1[2] = double2bin(list.at(c1).get_isMeetGarbageWeight());
 		temp1[3] = double2bin(list.at(c1).get_isExHighWeight());
-		temp1[4] = double2bin(list.at(c1).get_isLT2());
 
 		temp2[0] = double2bin(list.at(c2).get_verticalBlockWeight());
 		temp2[1] = double2bin(list.at(c2).get_horizontalBlockWeight());
 		temp2[2] = double2bin(list.at(c2).get_isMeetGarbageWeight());
 		temp2[3] = double2bin(list.at(c2).get_isExHighWeight());
-		temp2[4] = double2bin(list.at(c2).get_isLT2());
 
 		// give parameters as a selected chromosome's string weight array
 		crossOver(temp1, temp2);
@@ -333,9 +328,6 @@ void GeneticAlgorithm::runGA() {
 		num = bin2double(temp1[3]);
 		list.at(new_id).set_isExHighWeight(num);
 
-		num = bin2double(temp1[4]);
-		list.at(new_id).set_isLT2(num);
-
 		new_id++;
 
 		// new born baby 2
@@ -350,9 +342,6 @@ void GeneticAlgorithm::runGA() {
 
 		num = bin2double(temp2[3]);
 		list.at(new_id).set_isExHighWeight(num);
-
-		num = bin2double(temp2[4]);
-		list.at(new_id).set_isLT2(num);
 
 	}
 	
