@@ -73,14 +73,10 @@ void GeneticAlgorithm::writeWeightToFile() {
 int GeneticAlgorithm::selection(int index, vector<Weight> weightList) {
 
 	int score = 0;
-	// current maxScore
-	int maxScore = 0;
+
+	int maxScore = weightList.at(49).get_maxScore();
 	
 	score = weightList.at(index).get_score();
-
-	if (score > maxScore) {
-		maxScore = score;
-	}
 
 	// piece < score 
 	double piece = (double)(maxScore * random(0,1));
