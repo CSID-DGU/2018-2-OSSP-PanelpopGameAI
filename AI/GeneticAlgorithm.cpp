@@ -30,7 +30,7 @@ GeneticAlgorithm::GeneticAlgorithm() {
 		// generate 50 initial parents by random()
 		for (int i = 0; i < 50; i++) {
 			// lowLimit = 0, upperLimit = 10
-			weightList.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10)));
+			weightList.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10), 0));
 		}
 		// write initial generation to file
 		writeWeightToFile();
@@ -75,8 +75,12 @@ int GeneticAlgorithm::selection(int index, vector<Weight> weightList) {
 	int score = 0;
 	// current maxScore
 	int maxScore = 0;
-
+	
 	score = weightList.at(index).get_score();
+
+	if (score > maxScore) {
+		maxScore = score;
+	}
 
 	// piece < score 
 	double piece = (double)(maxScore * random(0,1));
@@ -348,6 +352,12 @@ void GeneticAlgorithm::runGA() {
 	
 	// write to file and store to new Weight list
 	writeWeightToFile();
+
+	// set maxScore to 0
+	for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
+		weightList.at(i).set_maxScore(0);
+	}
+
 }
 
 // Destructor
