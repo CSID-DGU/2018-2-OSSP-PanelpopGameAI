@@ -2,7 +2,7 @@
 /*
  * Weight.h
  *
- *  Modified on: Dec 7, 2018
+ *  Modified on: Dec 8, 2018
  *      Author: blue
  */
 
@@ -27,17 +27,21 @@ private:
 	int ID;
 	// game score of each child
 	int score;
+	int maxScore;
 
 public:
 	// Constructor
 	Weight(int _ID, double _verticalBlockWeight, double _horizontalBlockWeight,
-		double _isMeetGarbageWeight, double _isExHighWeight);
+		double _isMeetGarbageWeight, double _isExHighWeight, int _maxScore);
 	
 	//getter
 	double get_verticalBlockWeight();
 	double get_horizontalBlockWeight();
 	double get_isMeetGarbageWeight();
 	double get_isExHighWeight();
+	int get_score();
+	int get_maxScore();
+	int get_ID();
 
 	//setter
 	void set_verticalBlockWeight(double _verticalBlockWeight);
@@ -45,9 +49,8 @@ public:
 	void set_isMeetGarbageWeight(double _isMeetGarbageWeight);
 	void set_isExHighWeight(double _isExHighWeight);
 	void set_score(int _score);
+	void set_maxScore(int _maxscore);
 
-	int get_ID();
-	int get_score();
-}
+};
 
 #endif /* AI_WEIGHT_H_ */
