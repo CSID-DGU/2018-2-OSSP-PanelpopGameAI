@@ -1,27 +1,25 @@
 
 /* 
- * File:   AIGameState.cpp
+ * File:   AITraingingGameState.cpp
  * Author: ysy
  * 
- * Created on September 26, 2016, 11:18 PM
+ * Created on 8/12/2018
  */
 
 #include "AITrainingGameState.h"
 
 
 #include "../AI/AIBoardController.h"
-
+#include <SDL2/SDL_scancode.h>
 
 
 #include "../Game/BoardEventHandler.h"
 #include "../Game/GameEventHandler.h"
 #include "StateManager.h"
-#include "../Game/KeyboardController.h"
-#include "../Game/VsGame.h"
-#include "../Rendering/VsGameRenderer.h"
-#include "AITrainingGameState.h"
+
 #include "../AI/Weight.h"
 #include "EndlessGameState.h"
+
 
 
 
@@ -29,23 +27,24 @@ AITrainingGameState::AITrainingGameState() {//
 	_game = new EndlessGame(new GameEventHandler());
 	_gameRenderer = new EndlessGameRenderer((EndlessGame &)* _game);
 	_game->getBoard(0).setEventHandler(new BoardEventHandler(*_gameRenderer, 0));
-	//    _playerBoardController = new KeyboardController(_game->getBoard(0),
-	//            StateManager::getInstance().getP1keys());
 	temp = new AIBoardController(_game->getBoard(0));
 	_opponentBoardcontollers.push_back(temp);
 	
 	
 	geneticAlgorithm= new GeneticAlgorithm();
-//	temp->horizontalBlockWeight = list.at(0).get_horizontalBlockWeight;// <
-//	temp->isExHighWeight = list.at(0).get_isExHighWeight;
-//	temp->verticalBlockWeight = list.at(0).get_verticalBlockWeight;
-	temp->set_horizontalBlockWeight(list.at(count).get_horizontalBlockWeight);//
-                        temp->set_isExHighWeight(list.at(count).get_isExHighWeight);
-                        temp->set_verticalBlockWeight(list.at(count).get_verticalBlockWeight);
+
+/* original code
+	temp->set_horizontalBlockWeight(weightList.at(0).get_horizontalBlockWeight());//
+        temp->set_isExHighWeight(weightList.at(0).get_isExHighWeight());
+        temp->set_verticalBlockWeight(weightList.at(0).get_verticalBlockWeight());
+*/
 
 
+	temp->set_horizontalBlockWeight(10);//
+        temp->set_isExHighWeight(2);
+        temp->set_verticalBlockWeight(8);
 
-	temp->ID = list.at(0).get_ID;
+
 
 
 }
@@ -64,7 +63,7 @@ void AITrainingGameState::tick() {
 	}
 	if (_game->getState() == Game::State::RUNNING) {
 		//  _playerBoardController->tick();
-		for (AIBoardController* controller : _opponentBoardcontollers) {
+		for (BoardController* controller : _opponentBoardcontollers) {
 			controller->tick();
 		}
 	}
@@ -79,8 +78,8 @@ void AITrainingGameState::tick() {
 		
 			
 		}
-		int currentScore = _game->getBoard(0).getScore;
-		list.at(count).set_score = currentScore; //sco
+		int currentScore = _game->getBoard(0).getScore();
+		weightList.at(count).set_score(currentScore); //sco
 		if (maxScore <= currentScore) maxScore = currentScore;
 
 
@@ -88,20 +87,23 @@ void AITrainingGameState::tick() {
 		++count;
 		
 		
-		if (count == list.size()) { //
+		if (count == weightList.size()) { //
+			
+			weightList.at(count-1).set_maxScore(maxScore);
+
 			geneticAlgorithm->runGA(); 
 			count = 0;
-			temp->set_horizontalBlockWeight(list.at(count).get_horizontalBlockWeight);//
-			temp->set_isExHighWeight(list.at(count).get_isExHighWeight);
-			temp->set_verticalBlockWeight(list.at(count).get_verticalBlockWeight);
-			temp->ID = list.at(count).get_ID;
+			temp->set_horizontalBlockWeight(weightList.at(count).get_horizontalBlockWeight());//
+			temp->set_isExHighWeight(weightList.at(count).get_isExHighWeight());
+			temp->set_verticalBlockWeight(weightList.at(count).get_verticalBlockWeight());
+		//	temp->ID = weightList.at(count).get_ID;
 			maxScore = 0;
 		}
 		else {
-			temp->set_horizontalBlockWeight(list.at(count).get_horizontalBlockWeight);// 
-			temp->set_isExHighWeight(list.at(count).get_isExHighWeight);
-			temp->set_verticalBlockWeight(list.at(count).get_verticalBlockWeight);
-			temp->ID = list.at(count).get_ID;
+			temp->set_horizontalBlockWeight(weightList.at(count).get_horizontalBlockWeight());// 
+			temp->set_isExHighWeight(weightList.at(count).get_isExHighWeight());
+			temp->set_verticalBlockWeight(weightList.at(count).get_verticalBlockWeight());
+		//	temp->ID =weightList.at(count).get_ID;
 		}
 		_game->reset();
 	
@@ -109,3 +111,4 @@ void AITrainingGameState::tick() {
 	_game->tick();
 	_gameRenderer->tick();
 }
+
