@@ -17,7 +17,7 @@ using namespace std;
 
 
 // list of weight
-extern vector<Weight> list;
+extern vector<Weight> weightList;
 // global variable
 static int Generation = 0;
 
@@ -27,23 +27,20 @@ public:
 
 	// Constructor : Generating parent
 	GeneticAlgorithm();
-	// crossover children
-	void crossOver(string * chromo1, string * chromo2);
-	// Destructors
-	~GeneticAlgorithm();
+	
 	// generate random number between upperLimit and lowLimit
 	double random(int upperLimit, int lowerLimit);
 	// write weights to file
-	void writeWeightToFile();
-	// running GA
-	void runGA();
+	void writeWeightToFile();	
 	// using roulette wheel selection
 	int selection(int index, vector <Weight> weightList);
+	// crossOver
+	double* crossOver(double chromo1, double chromo2);
 	// mutation
-	void mutation(string * chromo);
-	// convert double value weights to binary 
-	string double2bin(double real);
-	// convert binary bits to double value weights
-	double bin2double(string ptr);
+	double mutation(double chromo);
+	// running GA
+	void runGA();
+	// Destructors
+	~GeneticAlgorithm();
 };
 #endif /* AI_GENETICALGORITHM_H _ */
