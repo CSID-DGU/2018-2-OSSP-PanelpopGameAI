@@ -1,4 +1,13 @@
 
+/*
+ysy
+edited 
+2018 / 12/ 9
+
+*/
+
+
+
 #ifndef AIBOARDCONTROLLER_H
 #define AIBOARDCONTROLLER_H
 
@@ -28,6 +37,11 @@ public:
 	double getFitness_HorizonalBlock(BoardScanner::HorizontalMatch horizontalmatch);
 	double getFitness_Vertical(BoardScanner::VerticalMatch verticalmatch);
 	double getFitness_numOfBlock(int num);
+	void set_verticalBlockWeight(double _verticalBlockWeight);
+	void set_isExHighWeight(double _isExHighWeight);
+	void set_horizontalBlockWeight(double _horizontalBlockWeight);
+	void set_numOfBlockWeight(double _numblockWeight);
+
 private:
     BoardScanner _scanner;
 
@@ -35,13 +49,13 @@ private:
     std::queue<CursorMoveAction> _cursorQueue;
     std::queue<BlockMoveAction> _blockMoveQueue;
 
-    double verticalBlockWeight = 0; //수직블록
-	double horizontalBlockWeight = 0; //수평블록
-    bool isMeetGarbageWeight = 0; //쓰레기와 만나는가
+    double verticalBlockWeight = 10; //수직블록
+	double horizontalBlockWeight = 5; //수평블록
+    bool isMeetGarbageWeight = 7; //쓰레기와 만나는가
 	double isExHighWeight = 0;
     int variance = 0; //분산
     int averageHeight = 0; //평균높이
-	double numblockWeight;
+	double numblockWeight=0;
 
 	int findmaxnum(AIBoardController::fitnessarr arr);
 
@@ -60,4 +74,3 @@ private:
 };
 
 #endif /* AIBOARDCONTROLLER_H */
-
