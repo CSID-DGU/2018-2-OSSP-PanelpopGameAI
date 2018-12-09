@@ -2,28 +2,29 @@
 /*
  * GeneticAlgorithm.h
  *
- *  Modified on: Dec 7, 2018
+ *  Modified on: Dec 9, 2018
  *      Author: blue
  */
 
 #ifndef AI_GENETICALGORITHM_H_
 #define AI_GENETICALGORITHM_H_
 #include "Weight.h"
-//#include "EndlessGameState.h"
-#include <vector>
+#include <Vector>
 #include <string>
 #include <map>
 
 using namespace std;
 
+
+// list of weight
+extern vector<Weight> list;
 // global variable
 static int Generation = 0;
-// list of weight
-static vector <Weight> weightList;
 
 class GeneticAlgorithm {
 	
 public:
+
 	// Constructor : Generating parent
 	GeneticAlgorithm();
 	// crossover children
@@ -37,7 +38,7 @@ public:
 	// running GA
 	void runGA();
 	// using roulette wheel selection
-	int selection(int index, vector<Weight> weightList);
+	int selection(int index, vector <Weight> weightList);
 	// mutation
 	void mutation(string * chromo);
 	// convert double value weights to binary 
