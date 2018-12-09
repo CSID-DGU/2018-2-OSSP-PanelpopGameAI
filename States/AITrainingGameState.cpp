@@ -4,6 +4,7 @@
  * Author: ysy
  * 
  * Created on 8/12/2018
+ * edited on 9/12/2018
  */
 
 #include "AITrainingGameState.h"
@@ -21,7 +22,7 @@
 #include "EndlessGameState.h"
 
 
-
+vector<Weight> weightList;
 
 AITrainingGameState::AITrainingGameState() {//
 	_game = new EndlessGame(new GameEventHandler());
@@ -33,17 +34,18 @@ AITrainingGameState::AITrainingGameState() {//
 	
 	geneticAlgorithm= new GeneticAlgorithm();
 
-/* original code
+/* original code*/
 	temp->set_horizontalBlockWeight(weightList.at(0).get_horizontalBlockWeight());//
         temp->set_isExHighWeight(weightList.at(0).get_isExHighWeight());
         temp->set_verticalBlockWeight(weightList.at(0).get_verticalBlockWeight());
-*/
+	temp->set_numOfBlockWeight(weightList.at(0).get_numOfBlock());
 
+/*
 
 	temp->set_horizontalBlockWeight(10);//
         temp->set_isExHighWeight(2);
         temp->set_verticalBlockWeight(8);
-
+*/
 
 
 
@@ -96,14 +98,16 @@ void AITrainingGameState::tick() {
 			temp->set_horizontalBlockWeight(weightList.at(count).get_horizontalBlockWeight());//
 			temp->set_isExHighWeight(weightList.at(count).get_isExHighWeight());
 			temp->set_verticalBlockWeight(weightList.at(count).get_verticalBlockWeight());
-		//	temp->ID = weightList.at(count).get_ID;
+			temp->set_numOfBlockWeight(weightList.at(count).get_numOfBlock());
+
 			maxScore = 0;
 		}
 		else {
 			temp->set_horizontalBlockWeight(weightList.at(count).get_horizontalBlockWeight());// 
 			temp->set_isExHighWeight(weightList.at(count).get_isExHighWeight());
 			temp->set_verticalBlockWeight(weightList.at(count).get_verticalBlockWeight());
-		//	temp->ID =weightList.at(count).get_ID;
+			temp->set_numOfBlockWeight(weightList.at(count).get_numOfBlock());
+
 		}
 		_game->reset();
 	
