@@ -29,9 +29,8 @@ GeneticAlgorithm::GeneticAlgorithm() {
 	if (Generation == 0) {
 		// generate 50 initial parents by random()
 		for (int i = 0; i < 50; i++) {
-			// lowLimit = 0, upperLimit = 10
-			weightList.push_back(Weight(i, random(0, 10), random(0, 10), random(0, 10), random(0, 10), 0));
-		}
+		    weightList.push_back(Weight(i, random(10, 0), random(10, 0), random(10, 0), random(10, 0), random(10, 0), 0));
+		} 
 		// write initial generation to file
 		writeWeightToFile();
 	}
@@ -43,8 +42,9 @@ double GeneticAlgorithm::random(int upperLimit, int lowerLimit) {
 	random_device sd;
 	mt19937_64 sed(sd());
 	uniform_real_distribution<double> range(lowerLimit, upperLimit);
-
-	return range(sed);
+	
+	// until 5th digits 
+	return floor(range(sed)*100000.f + 0.5) / 100000.f;
 
 }
 
@@ -53,17 +53,19 @@ void GeneticAlgorithm::writeWeightToFile() {
 
 	Generation++;
 	char fileName[30];
-	sprintf(fileName, "Weight[%d].txt", Generation);
+	sprintf_s(fileName, "Weight[%d].txt", Generation);
 	ofstream fileout(fileName);
 
 	// write weights to file
 	if (fileout.is_open()) {
 
 		for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
-			fileout << i << "   " << weightList.at(i).get_verticalBlockWeight() << "   " <<
-				weightList.at(i).get_horizontalBlockWeight() << "   " <<
-				weightList.at(i).get_isMeetGarbageWeight() << "   " <<
-				weightList.at(i).get_isExHighWeight() << "   " << endl;
+			fileout << i << "   " << weightList.at(i).get_verticalBlockWeight() << "   " 
+				<< weightList.at(i).get_horizontalBlockWeight() << "   " 
+				<< weightList.at(i).get_isMeetGarbageWeight() << "   "
+				<< weightList.at(i).get_isExHighWeight() << "   "
+				<< weightList.at(i).get_numOfBlock()
+				<< "\n";
 		}
 	}
 
@@ -74,6 +76,7 @@ int GeneticAlgorithm::selection(int index, vector<Weight> weightList) {
 
 	int score = 0;
 
+	// put maxscore of the generation into 49 chromosome's maxScore
 	int maxScore = weightList.at(49).get_maxScore();
 	
 	score = weightList.at(index).get_score();
@@ -91,174 +94,95 @@ int GeneticAlgorithm::selection(int index, vector<Weight> weightList) {
 	return -1;
 }
 
-// choose using Roulette wheel and crossOver considering mutation 
-// get parameters as a pointer of weight string array
-void GeneticAlgorithm::crossOver(string * chromo1, string * chromo2) {
+//using BLX-α algorithm
+double* GeneticAlgorithm::crossOver(double chromo1, double chromo2) {
 
-	int place = 0;
+	double big;
+	double small;
+	double arr[2];
 
-	// crossover randomly
-	// 0 < RANDOM < 1
-	for (int i = 0; i < 4; i++) {
-		string g1 = "";
-		string g2 = "";
+	if (random(1, 0) < CROSSOVER_RATE) {
 
-		int size1 = chromo1[i].size();
-		int size2 = chromo2[i].size();
-
-		if (random(0, 1) < CROSSOVER_RATE) {
-
-			place = (int)(random(0, 1) * CHROMOSOME_LENGTH);
-
-			// if random place > weight's size
-			if (place > size1 || place > size2) {
-				if (size1 > size2) place = size2 - 1;
-				else place = size1 - 1;
-			}
-
-			// crossover
-			g1 = chromo1[i].substr(0, place) + chromo2[i].substr(place);
-			g2 = chromo2[i].substr(0, place) + chromo1[i].substr(place);
-
-			chromo1[i] = g1;
-			chromo2[i] = g2;
+		if (chromo1 > chromo2) {
+			big = chromo1;
+			small = chromo2;
 		}
+		else {
+			big = chromo2;
+			small = chromo1;
+		}
+
+		double num = random(1, 0);
+		double min = small - num * (big - small);
+		double max = big + num * (big - small);
+
+		// test if min < 0
+		if (min < 0) {
+			while (1) {
+				num = random(1, 0);
+				min = small - num * (big - small);
+				if (min > 0) break;
+			}
+		}
+
+		// test if max > 10
+		if (max > 10) {
+			while (1) {
+				num = random(1, 0);
+				max = small - num * (big - small);
+				if (max < 10) break;
+			}
+		}
+
+		chromo1 = random(max, min);
+		chromo2 = random(max, min);
 	}
+	
+	arr[0] = chromo1;
+	arr[1] = chromo2;
+
+	return arr;
 }
 
 // mutate children 
-void GeneticAlgorithm::mutation(string * chromo) {
-
-	int num = 0;
-	string temp = "";
-
-	// consider mutation on every 5 Weights 
-	for (int i = 0; i < 4; i++) {
-
-		int size1 = chromo[i].size();
-
-		// how to mutate
-		if (random(0, 1) < MUATATION_RATE) {
-			num = (int)(random(0, 1) * CHROMOSOME_LENGTH);
-
-			if (num > size1) num = size1-1;
-			
-			temp = chromo->at(num);
-
-			// if randomly picked string is 1 
-			// convert to 0
-			if (temp.compare("1") == 0) {
-				chromo->replace(num, 1, "0");
-			}
-
-			else
-				chromo->replace(num, 1, "1");
-		}
-	}
-}
-
-// convert real value weights to binary
-// 5 digits from rightmost are decimal point part
-// Assume (0 < weight < 10) => max_chromosome_size = 9
-string GeneticAlgorithm::double2bin(double real) {
-
-	// real value part
-	int num = (int)real;
-	// decimal point part
-	double point = real - num;
-	int size = 0;
-	int index = 0;
-
-	// reversed real value weight bits
-	string r;
-	// reversed decimal point weight bits
-	string p;
-	// destination of reversing
-	string binary;
-
-	// real value part 
-	while (1) {
-
-		// store remainder to temp
-		r += to_string(num % 2);
-		num /= 2;
-
-		if (num == 1) { r += to_string(1); }
-		else if (num == 0) break;
-
-	}
-
-	// decimal point part
-	for (int i = 0; i < 5; i++) {
-
-		point *= 2;
-
-		if (point > 1) {
-			p += to_string(1);
-			point -= 1;
-		}
-
-		else p += to_string(0);
-
-	}
-
-	/*
-	 * binary bits = real value(unknown, 1 to 3) + decimal point(5bits)
-	 */
-
-	 // index of reversing bits process
-	index = r.size() - 1;
-
-	while (1) {
-		// reverse stored remainder 
-		binary += r.at(index);
-		index--;
-		if (index < 0) break;
-	}
+double GeneticAlgorithm::mutation(double chromo) {
 	
-	index = 4;
-
-	for (int i = 0; i < 5; i++) {
-		binary += p.at(index);
-		index--;
-	}
-
-	return binary;
-
-}
-
-// convert binary bits to double value weights
-// considering notation of decimal point 
-// parameter is string array
-double GeneticAlgorithm::bin2double(string ptr) {
-
-	// size of vector
-	int size = 0;
 	int num = 0;
 
-	// weight 
-	double w = 0;
+	if (random(1,0) < MUATATION_RATE) {
+		
+		num = random(1, 0);
+		chromo + num;
 
-	// size of the weight binary
-	size = ptr.size();
-	int index = size - 1;
-
-	for (int i = 0; i < size; i++) {
-
-		// rightmost bit = 0 or 1
-		num = ptr.at(index);
-
-		if (num == '1') {
-			w += pow(2, i);
+		if (chromo > 10) {
+			while (1) {
+				num = random(1, 0);
+				chromo + num;
+				if (chromo < 10) break;
+			}
 		}
-		// left <- right
-		index--;
+
 	}
-	return w;
+
+	return chromo;
+
 }
+
 
 // running GeneticAlgorithm
 void GeneticAlgorithm::runGA() {
+
+	// for debugging
+	/*
+	for (int i = 0; i < MAX_GENERATION_SIZE; i++) {
+		weightList.at(i).set_score(random(100, 0));
+	}
+
+	weightList.at(49).set_maxScore(88);
+	*/
+	// debuggging code ends
+
+
 
 	// candidate child's ID
 	int c1 = 0;
@@ -266,9 +190,18 @@ void GeneticAlgorithm::runGA() {
 	double num = 0;
 	// child's ID for loop
 	int index = 0;
-	int temp = 0;
-	int new_id = 0;
 
+	int temp = 0;
+	// count for loop 
+	int new_id = 0;
+	// temp1
+	double k;
+	double p;
+	// temp2
+	double x;
+	double y;
+	double *ptr;
+	
 	while (new_id < MAX_GENERATION_SIZE) {
 
 		// performing selection 
@@ -277,6 +210,7 @@ void GeneticAlgorithm::runGA() {
 		while (1) {
 			temp = selection(index, weightList);
 			index++;
+			// if selected 
 			if (temp >= 0) break;
 			else if (index == 49) index = 0;
 		}
@@ -286,63 +220,112 @@ void GeneticAlgorithm::runGA() {
 		while (1) {
 			temp = selection(index, weightList);
 			index++;
+			// if selected
 			if (temp >= 0) break;
 			else if (index == 49) index = 0;
 		}
 		c2 = temp;
+
 		index = 0;
 
-		// crossover two chromosomes
+		/** 1. horizontalBlockWeight **/
 
-		string temp1[4];
-		string temp2[4];
-		// convert weight from double to string
-		temp1[0] = double2bin(weightList.at(c1).get_verticalBlockWeight());
-		temp1[1] = double2bin(weightList.at(c1).get_horizontalBlockWeight());
-		temp1[2] = double2bin(weightList.at(c1).get_isMeetGarbageWeight());
-		temp1[3] = double2bin(weightList.at(c1).get_isExHighWeight());
+		// performing crossover 
+		k = weightList.at(c1).get_horizontalBlockWeight();
+		p = weightList.at(c2).get_horizontalBlockWeight();
+		ptr = crossOver(k, p);
+		x = ptr[0];
+		y = ptr[1];
 
-		temp2[0] = double2bin(weightList.at(c2).get_verticalBlockWeight());
-		temp2[1] = double2bin(weightList.at(c2).get_horizontalBlockWeight());
-		temp2[2] = double2bin(weightList.at(c2).get_isMeetGarbageWeight());
-		temp2[3] = double2bin(weightList.at(c2).get_isExHighWeight());
+		weightList.at(c1).set_horizontalBlockWeight(x);
+		weightList.at(c2).set_horizontalBlockWeight(y);
 
-		// give parameters as a selected chromosome's string weight array
-		crossOver(temp1, temp2);
-		// consider mutation
-		mutation(temp1);
-		mutation(temp2);
+		// performing muatation
+		k = mutation(weightList.at(c1).get_horizontalBlockWeight());
+		p = mutation(weightList.at(c2).get_horizontalBlockWeight());
 
-		// update New generation to vector<Weight> weightList
+		weightList.at(c1).set_horizontalBlockWeight(k);
+		weightList.at(c2).set_horizontalBlockWeight(p);
+
+		/** 2. verticalBlockWeight **/
+
+		// performing crossover 
+		k = weightList.at(c1).get_verticalBlockWeight();
+		p = weightList.at(c2).get_verticalBlockWeight();
+		ptr = crossOver(k, p);
+		x = ptr[0];
+		y = ptr[1];
+
+		weightList.at(c1).set_verticalBlockWeight(x);
+		weightList.at(c2).set_verticalBlockWeight(y);
+
+		// performing muatation
+		k = mutation(weightList.at(c1).get_verticalBlockWeight());
+		p = mutation(weightList.at(c2).get_verticalBlockWeight());
+
+		weightList.at(c1).set_verticalBlockWeight(k);
+		weightList.at(c2).set_verticalBlockWeight(p);
+		
+		/** 3. isExHighWeight **/
+
+		// performing crossover 
+		k = weightList.at(c1).get_isExHighWeight();
+		p = weightList.at(c2).get_isExHighWeight();
+		ptr = crossOver(k, p);
+		x = ptr[0];
+		y = ptr[1];
+
+		weightList.at(c1).set_isExHighWeight(x);
+		weightList.at(c2).set_isExHighWeight(y);
+
+		// performing muatation
+		k = mutation(weightList.at(c1).get_isExHighWeight());
+		p = mutation(weightList.at(c2).get_isExHighWeight());
+
+		weightList.at(c1).set_isExHighWeight(k);
+		weightList.at(c2).set_isExHighWeight(p);
+
+		/** 4. numOfBlock **/
+
+		// performing crossover 
+		k = weightList.at(c1).get_numOfBlock();
+		p = weightList.at(c2).get_numOfBlock();
+		ptr = crossOver(k, p);
+		x = ptr[0];
+		y = ptr[1];
+
+		weightList.at(c1).set_numOfBlock(x);
+		weightList.at(c2).set_numOfBlock(y);
+
+		// performing muatation
+		k = mutation(weightList.at(c1).get_numOfBlock());
+		p = mutation(weightList.at(c2).get_numOfBlock());
+
+		weightList.at(c1).set_numOfBlock(k);
+		weightList.at(c2).set_numOfBlock(p);
+
+		
+		/** 5. **/
+
+		// performing crossover 
+		k = weightList.at(c1).get_isMeetGarbageWeight();
+		p = weightList.at(c2).get_isMeetGarbageWeight();
+		ptr = crossOver(k, p);
+		x = ptr[0];
+		y = ptr[1];
+
+		weightList.at(c1).set_isMeetGarbageWeight(x);
+		weightList.at(c2).set_isMeetGarbageWeight(y);
+
+		// performing muatation
+		k = mutation(weightList.at(c1).get_isMeetGarbageWeight());
+		p = mutation(weightList.at(c2).get_isMeetGarbageWeight());
+
+		weightList.at(c1).set_isMeetGarbageWeight(k);
+		weightList.at(c2).set_isMeetGarbageWeight(p);
+		
 		new_id++;
-
-		// new born baby 1
-		num = bin2double(temp1[0]);
-		weightList.at(new_id).set_verticalBlockWeight(num);
-
-		num = bin2double(temp1[1]);
-		weightList.at(new_id).set_horizontalBlockWeight(num);
-
-		num = bin2double(temp1[2]);
-		weightList.at(new_id).set_isMeetGarbageWeight(num);
-
-		num = bin2double(temp1[3]);
-		weightList.at(new_id).set_isExHighWeight(num);
-
 		new_id++;
-
-		// new born baby 2
-		num = bin2double(temp2[0]);
-		weightList.at(new_id).set_verticalBlockWeight(num);
-
-		num = bin2double(temp2[1]);
-		weightList.at(new_id).set_horizontalBlockWeight(num);
-
-		num = bin2double(temp2[2]);
-		weightList.at(new_id).set_isMeetGarbageWeight(num);
-
-		num = bin2double(temp2[3]);
-		weightList.at(new_id).set_isExHighWeight(num);
 
 	}
 	
