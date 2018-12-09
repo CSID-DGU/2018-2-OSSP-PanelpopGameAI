@@ -2,7 +2,7 @@
 /*
  * Weight.h
  *
- *  Modified on: Dec 8, 2018
+ *  Modified on: Dec 9, 2018
  *      Author: blue
  */
 
@@ -23,22 +23,27 @@ private:
 	double isMeetGarbageWeight;
 	// weight of the condition that is there a especially high line (vertical)
 	double isExHighWeight;
+	// num of block
+	int numOfBlock;
 	// name of each child
 	int ID;
 	// game score of each child
 	int score;
+	// only use 49's 
 	int maxScore;
 
 public:
 	// Constructor
 	Weight(int _ID, double _verticalBlockWeight, double _horizontalBlockWeight,
-		double _isMeetGarbageWeight, double _isExHighWeight, int _maxScore);
+		double _isMeetGarbageWeight, double _isExHighWeight, double _numOfBlock, int _maxScore);
 	
 	//getter
 	double get_verticalBlockWeight();
 	double get_horizontalBlockWeight();
 	double get_isMeetGarbageWeight();
 	double get_isExHighWeight();
+	double get_numOfBlock();
+
 	int get_score();
 	int get_maxScore();
 	int get_ID();
@@ -48,8 +53,13 @@ public:
 	void set_horizontalBlockWeight(double _horizontalBlockWeight);
 	void set_isMeetGarbageWeight(double _isMeetGarbageWeight);
 	void set_isExHighWeight(double _isExHighWeight);
+	void set_numOfBlock(double _numOfBlock);
+
 	void set_score(int _score);
 	void set_maxScore(int _maxscore);
+
+	// Destructor
+	~Weight();
 
 };
 
