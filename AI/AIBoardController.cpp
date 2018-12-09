@@ -1,10 +1,22 @@
+/*
+
+edit ysy
+2018/12/9
+
+*/
+
+
 
 #include <stdexcept>
-#include<cmath>
+#include <cmath>
 
 #include "AIBoardController.h"
 
 #include <array>
+#include <sstream>
+
+std::string stateos;
+
 AIBoardController::AIBoardController(Board& board) :
 BoardController(board),
 _scanner(board) {
@@ -154,23 +166,40 @@ void AIBoardController::basicVerticalmatchStrat() { //수정
 	switch (temp) {
 	
 	case 0: //verticalfitness
+{		
+		stateos = "vertMatch";
+
 
 		doVerticalMatch(vertMatch);
 		break;
-	
+}	
 	case 1://horizonfitness
+{		
+		stateos = "horizMatch";
+		
+
+
 		doHorizonalBlockMatch(horizMatch);
 		break;
-
+}
 	case 2:// heightfitness
+	{	
+		
+		stateos = "flatteningMove";
+
+
 		BlockMoveAction flatteningMove = _scanner.findStackFlatteningMove();
 		_blockMoveQueue.push(flatteningMove);
 		break;
+}
+	case 3:{//umofBlockfitness
 
-	case 3://umofBlockfitness
+		
+		stateos = "RAISE";
+	
 		_inputQueue.push(RAISE);
 		break;	
-	
+		}
 	}
 
 
@@ -234,7 +263,7 @@ int AIBoardController::findmaxnum(AIBoardController::fitnessarr arr ) {
 		}
 	}
 	
-	return i;
+	return maxnum;
 
 }
 
@@ -242,9 +271,99 @@ int AIBoardController::findmaxnum(AIBoardController::fitnessarr arr ) {
 void AIBoardController::doVerticalMatch(BoardScanner::VerticalMatch match) {
 	/**********
 	수직찾으면 알아서 큐로 동작
-	
+	edit
 	************/
+	std::vector<std::pair<int, int>> colorBlock=_scanner.findColorBlock(match.color,match.topRow,match.bottomRow);
+
+	int histogram[Board::BOARD_WIDTH]  = {0,};
+	int point=0;
+	int middlepoint= (colorBlock.size()+1)/2; //중간값
+	int maxpoint = 0;
+	int median = 0;
+	for (int i = 0; i < colorBlock.size(); i++) {
 	
+		++histogram[colorBlock[i].first];
+	
+	}
+
+	for (int i = 0; i < Board::BOARD_WIDTH; i++) {
+	
+		if (histogram[i] >histogram[maxpoint]) {
+			
+				maxpoint = i;
+		}
+	
+	}
+
+	if (histogram[maxpoint] ==1) { //2이상의 최빈값이 없을때 
+
+		median=colorBlock[middlepoint].first;
+/*
+		for (int i = 0; i < Board::BOARD_WIDTH; i++) {
+			if (middlepoint > point)
+				point += histogram[i]
+			else {
+				median = i;
+				break;
+			}
+		}
+*/
+	}
+
+	else {
+		median = maxpoint;
+	}
+
+
+	for (int currentrow = match.topRow; currentrow >= match.bottomRow; currentrow--) {
+	
+	
+		BoardScanner::ColorBlock colorBlock = _scanner.findColorBlockFrom(match.color, currentrow, median);
+		if (colorBlock.found == true) {
+		
+			BlockMoveAction action = { colorBlock.col, currentrow, median, currentrow };
+			_blockMoveQueue.push(action);
+		
+		}
+	
+	}
+
+
+
+	/*
+	std::vector<std::pair<int,int>> temp;
+
+	
+	for (int i = match.topRow; i >= match.bottomRow; i--) {
+		//(col,row)
+		temp.push_back(std::pair<int,int>(_scanner.findColorCol(match.color, i),i));
+		
+
+	}
+	std::sort(temp.begin(), temp.end());
+
+
+	
+	int point = temp.at(temp.size() % 2).first; //matching col_point
+	
+	for (int i = temp.size()-1; i >=0; i--) {
+		
+		if (temp[i].first != point) {
+
+			BlockMoveAction action = { temp[i].first, temp[i].second, point, temp[i].second };
+			_blockMoveQueue.push(action);
+			
+		}
+		else {
+				temp.pop_back();
+		}
+
+	}
+
+
+	*/
+	/*original code
+
 
     int firstCol = _scanner.findColorCol(match.color, match.topRow);//왼쪽부터시작해서 처음만나는 color블록.x
     int firstRow = match.topRow - 1;
@@ -255,6 +374,7 @@ void AIBoardController::doVerticalMatch(BoardScanner::VerticalMatch match) {
         BlockMoveAction action = {col, altRow, firstCol, altRow};
         _blockMoveQueue.push(action);
     }
+	*/
 }
 
 void AIBoardController::doChainMatch(BoardScanner::ChainMatch match) { //안씀
@@ -281,16 +401,20 @@ void AIBoardController::doHorizonalBlockMatch(BoardScanner::HorizontalMatch matc
 
 	int firstcol = match.firstcol;
 	int lastcol = match.lastcol;
-	int secondcol = _scanner.findSecondColorCol(match.color, match.topRow);
+	int secondcol = _scanner.findSecondColorCol(match.color, match.row, firstcol,lastcol);
+	
 	int matchrow = match.row;
 
-
-	BlockMoveAction action = { firstcol,matchrow , secondcol, matchrow };
-	_blockMoveQueue.push(action);
-	
-	action = { lastcol,matchrow , secondcol, matchrow };
-	_blockMoveQueue.push(action);
-
+	if (secondcol != -1) {
+		if (secondcol - firstcol != 1) {
+			BlockMoveAction action = { firstcol,matchrow , secondcol, matchrow };
+			_blockMoveQueue.push(action);
+		}
+		if (lastcol - secondcol !=1 ) {
+			BlockMoveAction action = { lastcol,matchrow , secondcol, matchrow };
+			_blockMoveQueue.push(action);
+		}
+	}
 }
 
 AIBoardController::~AIBoardController() {
@@ -360,4 +484,21 @@ double AIBoardController::getFitness_numOfBlock(int num)
 }
 
 
+void AIBoardController::set_verticalBlockWeight(double _verticalBlockWeight){
 
+	verticalBlockWeight=_verticalBlockWeight;	
+
+}
+
+void AIBoardController::set_isExHighWeight(double _isExHighWeight){
+	isExHighWeight=_isExHighWeight;
+
+}
+void AIBoardController::set_horizontalBlockWeight(double _horizontalBlockWeight){
+	horizontalBlockWeight=_horizontalBlockWeight;
+}
+
+void AIBoardController::set_numOfBlockWeight(double _numblockWeight)
+{
+	numblockWeight=_numblockWeight;
+}
