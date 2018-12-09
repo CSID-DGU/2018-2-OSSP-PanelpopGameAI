@@ -53,7 +53,7 @@ void GeneticAlgorithm::writeWeightToFile() {
 
 	Generation++;
 	char fileName[30];
-	sprintf_s(fileName, "Weight[%d].txt", Generation);
+	sprintf(fileName, "Weight[%d].txt", Generation);
 	ofstream fileout(fileName);
 
 	// write weights to file
