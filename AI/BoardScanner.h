@@ -1,10 +1,10 @@
 
 /* 
  * File:   BoardScanner.h
- * Author: axel
+ * 
  *
  * Created on September 30, 2016, 10:22 PM
- * edit on Dec 1st 2018
+ * edit on 2018/12/9
  */
 
 #ifndef BOARDSCANNER_H
@@ -14,12 +14,15 @@
 #include "../Game/Board.h"
 #include"MoveActions.h"
 
+#include <vector>
 class BoardScanner {
 public:
     typedef std::map<BlockColor, unsigned int> ColorCounts;
     typedef std::array<ColorCounts, Board::BOARD_HEIGHT> RowColors;
 	//추가구조체
 	typedef std::array<int, Board::BOARD_WIDTH> BlockHeight; //int 형식으로 width만큼의 어레이
+
+	typedef std::vector<std::pair<int, int>> ColorBlockVec;
 
     struct VerticalMatch {
         bool found;
@@ -37,6 +40,15 @@ public:
 		int firstcol;
 		int lastcol;
 	};
+
+	struct ColorBlock {
+
+		bool found;
+		int col;
+		int row;
+
+	};
+
 
     struct ChainOffsetArea {
         bool found;
@@ -67,10 +79,13 @@ public:
     int findColorCol(BlockColor color, int row);
     int findColorOn(BlockColor color, int row, int startCol, int endCol);
 
+
 	int findSecondColorCol(BlockColor color, int row);
+	int findSecondColorCol(BlockColor color, int row, int firstcol, int lastcol);
 	int findSecondColorOn(BlockColor color, int row, int startCol, int endCol);
 
-
+	ColorBlockVec findColorBlock(BlockColor color, int toprow, int bottomrow);
+	ColorBlock findColorBlockFrom(BlockColor color, int row, int fromcol);
 
 
     BlockMoveAction findStackFlatteningMove();
@@ -82,4 +97,3 @@ private:
 };
 
 #endif /* BOARDSCANNER_H */
-
