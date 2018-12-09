@@ -4,6 +4,7 @@
  * Author: ysy
  *
  * Created on 2018/12/7
+ *edit 2018/12/9
  */
 
 #ifndef STATES_AITRAININGGAMESTATE_H
@@ -21,7 +22,7 @@
 
 
 
-extern vector<Weight> weightList;
+
 
 
 class AITrainingGameState : public GameState{
