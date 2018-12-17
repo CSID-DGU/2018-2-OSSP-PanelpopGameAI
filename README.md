@@ -54,4 +54,4 @@ Misc:
 1. `cmake -G "MinGW Makefiles" -DCMAKE_SH="CMAKE_SH-NOTFOUND"`
 2. `mingw32-make.exe`
 
-#### Dongguk UNIVERSITY, Seoul, Republic Of Korea
+#### DONGGUK UNIVERSITY, Seoul, Republic Of Korea
