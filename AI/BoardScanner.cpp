@@ -4,6 +4,9 @@
  * Author: axel
  * 
  * Created on September 30, 2016, 10:22 PM
+
+ edit 2018/12/9
+ ++ add func color, toprow, bottomrow 
  */
 
 #include "BoardScanner.h"
@@ -103,8 +106,8 @@ BoardScanner::HorizontalMatch BoardScanner::findHorizontalMatch()
 				}
 
 				if (row == 0)// 맨 땅바닥이면 구멍확인필요없음
-					return HorizontalMatch mathch = { true,color,row,rowColors[row][color],startcol,lastcol };
-
+				{ HorizontalMatch match = { true,color,row,rowColors[row][color],startcol,lastcol };
+return match;}
 				
 				if (row>0 && !isthereHole(row - 1))//row가 땅바닥이아니고 구멍이 없을때
 
@@ -201,6 +204,10 @@ int BoardScanner::findColorOn(BlockColor color, int row, int startCol, int endCo
 int BoardScanner::findSecondColorCol(BlockColor color, int row) {
 	return findSecondColorOn(color, row, 0, Board::BOARD_WIDTH - 1);
 }
+int BoardScanner::findSecondColorCol(BlockColor color, int row,int firstcol,int lastcol) {
+	return findSecondColorOn(color, row, firstcol, lastcol);
+}
+
 
 int BoardScanner::findSecondColorOn(BlockColor color, int row, int startCol, int endCol) {
 	/**
@@ -210,12 +217,86 @@ int BoardScanner::findSecondColorOn(BlockColor color, int row, int startCol, int
 
 	for (int col = startCol; col <= endCol; ++col) {
 		Board::Tile tile = _board.getTile(row, col);
-		if (tile.type == TileType::BLOCK && tile.b._color == color&&temp==1) {
-			return col;
+		if (tile.type == TileType::BLOCK && tile.b._color == color) {
+			if(temp==1) return col;
+			else ++temp;
 		}
-		else ++temp;
+		
 	}
 	return -1;
+}
+
+BoardScanner::ColorBlockVec BoardScanner::findColorBlock(BlockColor color, int toprow, int bottomrow)
+{
+	/*
+	toprow 와 bottomrow 사이의 color 블록의 x,y를 vector의 형태로 
+	
+	*/
+	ColorBlockVec BlockVec;
+
+	for (int row = toprow; row >= bottomrow; --row) {
+		for (int col = 0; col < Board::BOARD_WIDTH; ++col) {
+
+			Board::Tile tile = _board.getTile(row, col);
+			if (tile.type == TileType::BLOCK && tile.b._color == color)
+			{
+				BlockVec.push_back(std::pair<int, int>(col, row));
+			}
+		}
+	}
+
+	return BlockVec;
+}
+
+BoardScanner::ColorBlock BoardScanner::findColorBlockFrom(BlockColor color, int row, int fromcol)
+{
+	/*
+	row에 있는 colorblock을 fromcol에서 가장 가까이 있는 block을 반환(fromcol에 있는 블럭은 제외)
+	*/
+
+
+	int leftpoint, rightpoint;
+if(row>Board::BOARD_HEIGHT){
+
+std::cout<<"wrong row"<<row<<std::endl;
+ColorBlock colorBlock = {false};
+	return colorBlock;
+
+
+}
+
+else{
+	for (int i = 1; i < Board::BOARD_WIDTH; i++) {
+		leftpoint = fromcol - i;
+		if (leftpoint >= 0) {
+			Board::Tile tile = _board.getTile(row, leftpoint);
+			if (tile.type == TileType::BLOCK && tile.b._color == color)
+			{
+				
+					ColorBlock colorBlock = { true, leftpoint,row };
+					 return colorBlock;
+			}
+		}
+		rightpoint = fromcol + i;
+		if (rightpoint <= Board::BOARD_WIDTH) {
+			
+			Board::Tile tile = _board.getTile(row, rightpoint);
+
+			if (tile.type == TileType::BLOCK && tile.b._color == color)
+			{
+
+				ColorBlock colorBlock = { true, rightpoint, row };
+				return colorBlock;
+			}
+		
+		}
+
+	
+	}
+
+	ColorBlock colorBlock = {false};
+	return colorBlock;
+}
 }
 
 
@@ -358,4 +439,3 @@ BoardScanner::ChainMatch BoardScanner::findChainMatch() {//안씀
 
 BoardScanner::~BoardScanner() {
 }
-
