@@ -2,23 +2,24 @@
 /*
  * GeneticAlgorithm.cpp
  *
- *  Modified on: Dec 9, 2018
+ *  Modified on: Dec 18, 2018
  *      Author: blue
  */
 #include "Weight.h"
-#include <String>
+#include <string>
 
  //using namespace std;
 
  // Constructor : initialize fields of Weight class
 Weight::Weight(int _ID, double _verticalBlockWeight, double _horizontalBlockWeight,
-	double _isMeetGarbageWeight, double _isExHighWeight, double _numOfBlock, int _maxScore) {
+	double _isExHighWeight, double _numOfBlock, int _maxScore, int _score) {
 	ID = _ID;
 	verticalBlockWeight = _verticalBlockWeight;
 	horizontalBlockWeight = _horizontalBlockWeight;
-	isMeetGarbageWeight = _isMeetGarbageWeight;
 	isExHighWeight = _isExHighWeight;
+	numOfBlock = _numOfBlock;
 	maxScore = _maxScore;
+	score = _score;
 }
 
 //getter
@@ -29,10 +30,6 @@ double Weight::get_verticalBlockWeight() {
 
 double Weight::get_horizontalBlockWeight() {
 	return horizontalBlockWeight;
-}
-
-double Weight::get_isMeetGarbageWeight() {
-	return isMeetGarbageWeight;
 }
 
 double Weight::get_isExHighWeight() {
@@ -65,10 +62,6 @@ void Weight::set_horizontalBlockWeight(double _horizontalBlockWeight) {
 	horizontalBlockWeight = _horizontalBlockWeight;
 }
 
-void Weight::set_isMeetGarbageWeight(double _isMeetGarbageWeight) {
-	isMeetGarbageWeight = _isMeetGarbageWeight;
-}
-
 void Weight::set_isExHighWeight(double _isExHighWeight) {
 	isExHighWeight = _isExHighWeight;
 }
@@ -77,7 +70,7 @@ void Weight::set_numOfBlock(double _numOfBlock) {
 	numOfBlock = _numOfBlock;
 }
 
-void Weight::set_score(int _score){
+void Weight::set_score(int _score) {
 	score = _score;
 }
 
