@@ -2,7 +2,7 @@
 /*
  * Weight.h
  *
- *  Modified on: Dec 9, 2018
+ *  Modified on: Dec 18, 2018
  *      Author: blue
  */
 
@@ -15,32 +15,29 @@ using namespace std;
 class Weight {
 
 private:
+	// name of each child
+	int ID;
 	// weight of the number of vertical block
 	double verticalBlockWeight;
 	// weight of the number of horizontal block
 	double horizontalBlockWeight;
-	// weight of the condition that is meet the Garbage block or not
-	double isMeetGarbageWeight;
 	// weight of the condition that is there a especially high line (vertical)
 	double isExHighWeight;
 	// num of block
-	int numOfBlock;
-	// name of each child
-	int ID;
-	// game score of each child
-	int score;
+	double numOfBlock;
 	// only use 49's 
 	int maxScore;
+	// game score of each child
+	int score;
 
 public:
 	// Constructor
 	Weight(int _ID, double _verticalBlockWeight, double _horizontalBlockWeight,
-		double _isMeetGarbageWeight, double _isExHighWeight, double _numOfBlock, int _maxScore);
-	
+		 double _isExHighWeight, double _numOfBlock, int _maxScore, int _score);
+
 	//getter
 	double get_verticalBlockWeight();
 	double get_horizontalBlockWeight();
-	double get_isMeetGarbageWeight();
 	double get_isExHighWeight();
 	double get_numOfBlock();
 
@@ -51,7 +48,6 @@ public:
 	//setter
 	void set_verticalBlockWeight(double _verticalBlockWeight);
 	void set_horizontalBlockWeight(double _horizontalBlockWeight);
-	void set_isMeetGarbageWeight(double _isMeetGarbageWeight);
 	void set_isExHighWeight(double _isExHighWeight);
 	void set_numOfBlock(double _numOfBlock);
 
